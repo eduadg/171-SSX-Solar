@@ -1,12 +1,95 @@
-# React + Vite
+# SSX Solar - Sistema de Gerenciamento de Instalações
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicativo web para a empresa SSX Solar gerenciar seus serviços de instalação de aquecedores solares e a gás. O sistema possui três tipos de usuários: cliente, instalador (funcionário) e administrador (central da empresa).
 
-Currently, two official plugins are available:
+## Funcionalidades
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Painel do Cliente
+- Solicitar instalação de equipamentos (aquecedores solares ou a gás)
+- Acompanhar status de solicitações
+- Confirmar conclusão do serviço
+- Visualizar histórico de serviços
 
-## Expanding the ESLint configuration
+### Painel do Instalador
+- Visualizar serviços designados
+- Registrar início e conclusão de serviços
+- Documentar instalação com fotos
+- Adicionar observações técnicas
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Painel do Administrador
+- Cadastrar/gerenciar instaladores
+- Visualizar todas as solicitações
+- Atribuir serviços aos instaladores
+- Gerenciar catálogo de produtos e serviços
+
+## Tecnologias Utilizadas
+
+- React 19
+- Firebase (Authentication, Firestore, Storage)
+- Material UI (MUI)
+- React Router
+- React Hook Form
+
+## Requisitos do Sistema
+
+- Node.js 18 ou superior
+- NPM 8 ou superior
+- Conta Firebase
+
+## Configuração do Projeto
+
+1. Clone o repositório:
+```bash
+git clone https://github.com/eduadg/171-SSX-Solar.git
+cd 171-SSX-Solar
+```
+
+2. Instale as dependências:
+```bash
+npm install
+```
+
+3. Configure o Firebase:
+   - Crie um projeto no [Firebase Console](https://console.firebase.google.com/)
+   - Ative Authentication, Firestore e Storage
+   - Copie as credenciais de configuração do seu projeto Firebase
+   - Atualize o arquivo `src/config/firebase.js` com suas credenciais
+
+4. Execute o projeto em modo de desenvolvimento:
+```bash
+npm run dev
+```
+
+## Estrutura do Projeto
+
+```
+src/
+  ├── components/           # Componentes da UI
+  │   ├── admin/            # Componentes do painel de administrador
+  │   ├── auth/             # Componentes de autenticação
+  │   ├── client/           # Componentes do painel de cliente
+  │   └── installer/        # Componentes do painel de instalador
+  ├── config/               # Configurações da aplicação
+  ├── contexts/             # Contextos React (AuthContext)
+  ├── hooks/                # Custom hooks
+  ├── layouts/              # Layouts da aplicação
+  ├── pages/                # Páginas principais
+  ├── services/             # Serviços (Firebase, API)
+  └── utils/                # Funções utilitárias
+```
+
+## Funcionalidades Offline
+
+O sistema inclui modo offline para instaladores em campo com sincronização posterior dos dados quando a conexão for restaurada.
+
+## Responsividade
+
+A aplicação é completamente responsiva, permitindo uso em campo via celular ou tablet pelos instaladores.
+
+## Sistema de Notificações
+
+Implementa um sistema de notificações para todos os usuários sobre atualizações de status das solicitações.
+
+## Licença
+
+Este projeto é licenciado sob a licença MIT - consulte o arquivo LICENSE para obter detalhes.
