@@ -55,17 +55,23 @@ export function AuthProvider({ children }) {
       // Login mockado
       const userData = mockUsers[email];
       
+      console.log('Login mockado para:', email);
+      console.log('Dados do usuário:', userData);
+      
       // Simular um tempo de resposta para melhor UX
       await new Promise(resolve => setTimeout(resolve, 800));
       
       // Verificar senha (simulado)
       if (password !== '123456') {
+        console.error('Senha incorreta para login mockado');
         throw new Error('Senha incorreta');
       }
       
       // Definir usuário atual
       setCurrentUser(userData);
       setUserRole(userData.role);
+      
+      console.log('Role definida como:', userData.role);
       
       // Salvar na sessão
       sessionStorage.setItem('mockUser', JSON.stringify(userData));

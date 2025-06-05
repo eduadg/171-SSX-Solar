@@ -36,21 +36,21 @@ import AccountCircle from '@mui/icons-material/AccountCircle';
 
 // User role specific navigation items
 const clientNavItems = [
-  { title: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
+  { title: 'Dashboard', path: '/client/dashboard', icon: <DashboardIcon /> },
   { title: 'Solicitar Serviço', path: '/request-service', icon: <HomeRepairServiceIcon /> },
   { title: 'Histórico de Serviços', path: '/service-history', icon: <HistoryIcon /> },
   { title: 'Meu Perfil', path: '/profile', icon: <PersonIcon /> },
 ];
 
 const installerNavItems = [
-  { title: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
+  { title: 'Dashboard', path: '/installer/dashboard', icon: <DashboardIcon /> },
   { title: 'Meus Serviços', path: '/my-services', icon: <HomeRepairServiceIcon /> },
   { title: 'Histórico', path: '/service-history', icon: <HistoryIcon /> },
   { title: 'Meu Perfil', path: '/profile', icon: <PersonIcon /> },
 ];
 
 const adminNavItems = [
-  { title: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
+  { title: 'Dashboard', path: '/admin/dashboard', icon: <DashboardIcon /> },
   { title: 'Solicitações', path: '/service-requests', icon: <HomeRepairServiceIcon /> },
   { title: 'Instaladores', path: '/installers', icon: <GroupIcon /> },
   { title: 'Clientes', path: '/clients', icon: <GroupIcon /> },

@@ -11,6 +11,9 @@ import Login from './components/auth/Login';
 import PrivateRoute from './components/auth/PrivateRoute';
 import RoleRoute from './components/auth/RoleRoute';
 
+// Dashboard Router
+import DashboardRouter from './pages/Dashboard';
+
 // Client Components
 import ClientDashboard from './components/client/Dashboard';
 import ServiceRequestForm from './components/client/ServiceRequestForm';
@@ -47,12 +50,15 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             
+            {/* Dashboard router - redirecionamento inteligente */}
+            <Route path="/dashboard" element={<DashboardRouter />} />
+            
             {/* Private routes - require authentication */}
             <Route element={<PrivateRoute />}>
               <Route element={<MainLayout />}>
                 {/* Client routes */}
                 <Route element={<RoleRoute allowedRoles={['client']} />}>
-                  <Route path="/dashboard" element={<ClientDashboard />} />
+                  <Route path="/client/dashboard" element={<ClientDashboard />} />
                   <Route path="/request-service" element={<ServiceRequestForm />} />
                   <Route path="/service-history" element={<h1>Histórico de Serviços</h1>} />
                   <Route path="/service-details/:id" element={<h1>Detalhes do Serviço</h1>} />
@@ -62,7 +68,7 @@ function App() {
 
                 {/* Installer routes */}
                 <Route element={<RoleRoute allowedRoles={['installer']} />}>
-                  <Route path="/dashboard" element={<InstallerDashboard />} />
+                  <Route path="/installer/dashboard" element={<InstallerDashboard />} />
                   <Route path="/my-services" element={<h1>Meus Serviços</h1>} />
                   <Route path="/service-details/:id" element={<h1>Detalhes do Serviço</h1>} />
                   <Route path="/start-service/:id" element={<h1>Iniciar Serviço</h1>} />
@@ -73,7 +79,7 @@ function App() {
 
                 {/* Admin routes */}
                 <Route element={<RoleRoute allowedRoles={['admin']} />}>
-                  <Route path="/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
                   <Route path="/service-requests" element={<h1>Solicitações de Serviço</h1>} />
                   <Route path="/service-details/:id" element={<h1>Detalhes do Serviço</h1>} />
                   <Route path="/installers" element={<h1>Gerenciar Instaladores</h1>} />

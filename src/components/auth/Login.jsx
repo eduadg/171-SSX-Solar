@@ -71,18 +71,21 @@ export default function Login() {
       setError('');
       setLoading(true);
       
+      console.log(`Tentando login rápido como ${userType}:`, user);
+      
       // Preencher os campos do formulário com os dados mockados
       setEmail(user.email);
       setPassword(user.password);
       
       // Simular login
-      await login(user.email, user.password);
+      const result = await login(user.email, user.password);
+      console.log('Login bem-sucedido:', result);
       
       // Redirecionar para o dashboard
       navigate('/dashboard');
     } catch (error) {
-      setError('Falha ao fazer login rápido.');
-      console.error(error);
+      setError(`Falha ao fazer login rápido como ${userType}: ${error.message}`);
+      console.error('Erro no login rápido:', error);
     } finally {
       setLoading(false);
     }
