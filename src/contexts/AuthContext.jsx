@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -6,8 +6,8 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db, isDevMode } from '../config/firebase';
 
 const AuthContext = createContext();
 
@@ -44,9 +44,14 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [mockMode, setMockMode] = useState(true); // Ativar modo mockado
+  const [mockMode, setMockMode] = useState(isDevMode()); // Usa a mesma detecção dos serviços
 
   function signup(email, password) {
+    if (mockMode) {
+      // Signup mockado
+      console.log('🔧 [DEV MODE] Signup mock não implementado ainda');
+      return Promise.reject(new Error('Signup mock não disponível'));
+    }
     return createUserWithEmailAndPassword(auth, email, password);
   }
 
@@ -55,28 +60,36 @@ export function AuthProvider({ children }) {
       // Login mockado
       const userData = mockUsers[email];
       
-      console.log('Login mockado para:', email);
-      console.log('Dados do usuário:', userData);
+      console.log('🔧 [DEV MODE] Login mockado para:', email);
+      console.log('📋 [DEV MODE] Dados do usuário:', userData);
       
       // Simular um tempo de resposta para melhor UX
       await new Promise(resolve => setTimeout(resolve, 800));
       
       // Verificar senha (simulado)
       if (password !== '123456') {
-        console.error('Senha incorreta para login mockado');
-        throw new Error('Senha incorreta');
+        console.error('❌ [DEV MODE] Senha incorreta para login mockado (use: 123456)');
+        throw new Error('Email ou senha incorretos');
       }
       
       // Definir usuário atual
       setCurrentUser(userData);
       setUserRole(userData.role);
       
-      console.log('Role definida como:', userData.role);
+      console.log('✅ [DEV MODE] Login realizado com sucesso! Role:', userData.role);
       
       // Salvar na sessão
       sessionStorage.setItem('mockUser', JSON.stringify(userData));
       
       return userData;
+    } else if (mockMode) {
+      // Email não encontrado no mock
+      console.error('❌ [DEV MODE] Email não encontrado nos dados mock:', email);
+      console.log('📋 [DEV MODE] Emails disponíveis para teste:');
+      console.log('   - cliente@ssxsolar.com (senha: 123456)');
+      console.log('   - instalador@ssxsolar.com (senha: 123456)');
+      console.log('   - admin@ssxsolar.com (senha: 123456)');
+      throw new Error('Email ou senha incorretos');
     } else {
       // Login real com Firebase
       return signInWithEmailAndPassword(auth, email, password);
@@ -86,6 +99,7 @@ export function AuthProvider({ children }) {
   function logout() {
     if (mockMode) {
       // Logout mockado
+      console.log('🔧 [DEV MODE] Logout mockado realizado');
       setCurrentUser(null);
       setUserRole(null);
       sessionStorage.removeItem('mockUser');
@@ -99,14 +113,15 @@ export function AuthProvider({ children }) {
   function resetPassword(email) {
     if (mockMode) {
       // Reset de senha mockado
-      console.log('Reset de senha mockado para:', email);
+      console.log('🔧 [DEV MODE] Reset de senha mockado para:', email);
+      console.log('💡 [DEV MODE] No modo desenvolvimento, todas as senhas são: 123456');
       return Promise.resolve();
     } else {
       return sendPasswordResetEmail(auth, email);
     }
   }
 
-  async function getUserRole(uid) {
+  const getUserRole = useCallback(async (uid) => {
     try {
       if (mockMode) {
         // Buscar role do usuário mockado
@@ -133,27 +148,38 @@ export function AuthProvider({ children }) {
       console.error("Error fetching user role:", error);
       return null;
     }
-  }
+  }, [mockMode]);
 
   // Inicializar usuário mockado se existir na sessão
   useEffect(() => {
+    console.log('🔧 [AUTH] Inicializando AuthContext...');
+    console.log('🔧 [AUTH] Modo desenvolvimento:', mockMode ? 'ATIVADO' : 'DESATIVADO');
+    
     if (mockMode) {
       const storedUser = sessionStorage.getItem('mockUser');
       if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        setCurrentUser(userData);
-        setUserRole(userData.role);
-        setLoading(false);
+        try {
+          const userData = JSON.parse(storedUser);
+          console.log('🔧 [AUTH] Usuário mock encontrado na sessão:', userData.email);
+          setCurrentUser(userData);
+          setUserRole(userData.role);
+        } catch (e) {
+          console.warn('⚠️ [AUTH] Erro ao carregar usuário da sessão:', e);
+          sessionStorage.removeItem('mockUser');
+        }
       } else {
-        setLoading(false);
+        console.log('🔧 [AUTH] Nenhum usuário mock na sessão');
       }
+      setLoading(false);
     }
   }, [mockMode]);
 
   // Listener de autenticação do Firebase (só é usado quando não estamos em modo mockado)
   useEffect(() => {
     if (!mockMode) {
+      console.log('🔥 [AUTH] Configurando listener do Firebase Auth...');
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        console.log('🔥 [AUTH] Estado de autenticação mudou:', user ? user.email : 'usuário não logado');
         setCurrentUser(user);
         if (user) {
           await getUserRole(user.uid);
@@ -165,7 +191,30 @@ export function AuthProvider({ children }) {
 
       return unsubscribe;
     }
-  }, [mockMode]);
+  }, [mockMode, getUserRole]);
+
+  // Função para alternar modo mock (útil para desenvolvimento)
+  const toggleMockMode = () => {
+    const newMockMode = !mockMode;
+    setMockMode(newMockMode);
+    
+    if (newMockMode) {
+      // Mudando para modo mock - fazer logout do Firebase se necessário
+      if (auth.currentUser) {
+        signOut(auth);
+      }
+      setCurrentUser(null);
+      setUserRole(null);
+      sessionStorage.removeItem('mockUser');
+    } else {
+      // Mudando para modo real - limpar dados mock
+      setCurrentUser(null);
+      setUserRole(null);
+      sessionStorage.removeItem('mockUser');
+    }
+    
+    console.log('🔄 [AUTH] Modo alterado para:', newMockMode ? 'MOCK' : 'FIREBASE REAL');
+  };
 
   const value = {
     currentUser,
@@ -176,7 +225,9 @@ export function AuthProvider({ children }) {
     resetPassword,
     getUserRole,
     mockMode,
-    setMockMode
+    setMockMode,
+    toggleMockMode, // Função adicional para desenvolvimento
+    isDevMode: mockMode // Alias para clareza
   };
 
   return (

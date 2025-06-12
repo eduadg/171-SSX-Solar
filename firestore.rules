@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 🔐 REGRAS PARA USUÁRIOS
+    match /users/{userId} {
+      // Usuários podem ler seus próprios dados
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Usuários podem atualizar seus próprios dados (exceto role)
+      allow update: if request.auth != null && 
+                   request.auth.uid == userId &&
+                   !('role' in resource.data) || 
+                   resource.data.role == request.resource.data.role;
+      
+      // Apenas admins podem criar/deletar usuários e ler todos os usuários
+      allow create, delete: if request.auth != null && 
+                            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      
+      // Admins e instaladores podem ler dados de outros usuários (para atribuições)
+      allow read: if request.auth != null && 
+                 (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+                  get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'installer');
+    }
+    
+    // 📋 REGRAS PARA SOLICITAÇÕES DE SERVIÇO
+    match /serviceRequests/{requestId} {
+      // Clientes podem criar solicitações
+      allow create: if request.auth != null && 
+                   request.resource.data.clientId == request.auth.uid;
+      
+      // Clientes podem ler suas próprias solicitações
+      allow read: if request.auth != null && 
+                 resource.data.clientId == request.auth.uid;
+      
+      // Instaladores podem ler solicitações atribuídas a eles
+      allow read: if request.auth != null && 
+                 resource.data.installerId == request.auth.uid;
+      
+      // Instaladores podem atualizar status das suas solicitações
+      allow update: if request.auth != null && 
+                   resource.data.installerId == request.auth.uid &&
+                   request.resource.data.clientId == resource.data.clientId; // Não pode mudar cliente
+      
+      // Admins podem fazer tudo
+      allow read, write: if request.auth != null && 
+                        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // 📦 REGRAS PARA PRODUTOS
+    match /products/{productId} {
+      // Todos usuários autenticados podem ler produtos
+      allow read: if request.auth != null;
+      
+      // Apenas admins podem criar/atualizar/deletar produtos
+      allow create, update, delete: if request.auth != null && 
+                                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+} 

@@ -351,7 +351,7 @@ export default function ServiceRequestForm() {
           </div>
         );
         
-      case 2:
+      case 2: {
         const selectedProduct = products.find(p => p.id === formData.productId);
         return (
           <div className="space-y-6">
@@ -437,6 +437,7 @@ export default function ServiceRequestForm() {
             </div>
           </div>
         );
+      }
         
       default:
         return 'Etapa desconhecida';

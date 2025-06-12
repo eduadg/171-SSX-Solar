@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import ThemeToggle from '../ThemeToggle';
 
+
+
 // Dados mockados para desenvolvimento rápido
 const mockUsers = {
   client: {
@@ -20,21 +22,24 @@ const mockUsers = {
     password: '123456',
     role: 'client',
     name: 'Cliente',
-    description: 'Solicitar instalações e acompanhar serviços'
+    description: 'Solicitar instalações e acompanhar serviços',
+    color: 'from-blue-500 to-blue-600'
   },
   installer: {
     email: 'instalador@ssxsolar.com',
     password: '123456',
     role: 'installer',
     name: 'Instalador',
-    description: 'Executar instalações e documentar serviços'
+    description: 'Executar instalações e documentar serviços',
+    color: 'from-green-500 to-green-600'
   },
   admin: {
     email: 'admin@ssxsolar.com',
     password: '123456',
     role: 'admin',
     name: 'Administrador',
-    description: 'Gerenciar usuários e supervisionar operações'
+    description: 'Gerenciar usuários e supervisionar operações',
+    color: 'from-purple-500 to-purple-600'
   }
 };
 
@@ -77,6 +82,8 @@ export default function Login() {
       setError('');
       setLoading(true);
       
+      console.log(`🚀 [DEV] Login rápido como ${user.name}...`);
+      
       // Preencher os campos do formulário com os dados mockados
       setEmail(user.email);
       setPassword(user.password);
@@ -84,10 +91,12 @@ export default function Login() {
       // Simular login
       await login(user.email, user.password);
       
+      console.log(`✅ [DEV] Login realizado com sucesso como ${user.name}`);
+      
       // Redirecionar para o dashboard
       navigate('/dashboard');
     } catch (error) {
-      setError(`Falha ao fazer login rápido como ${userType}: ${error.message}`);
+      setError(`Falha ao fazer login rápido como ${user.name}: ${error.message}`);
       console.error('Erro no login rápido:', error);
     } finally {
       setLoading(false);
@@ -96,6 +105,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-blue-50 via-white to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 animate-gradient">
+      
       {/* Botão de tema no canto superior direito */}
       <div className="absolute top-4 right-4">
         <ThemeToggle />
@@ -113,6 +123,8 @@ export default function Login() {
           <p className="text-xl text-gray-600 dark:text-gray-300">
             Sistema de Gerenciamento de Instalações
           </p>
+          
+
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
@@ -207,17 +219,17 @@ export default function Login() {
             </form>
           </div>
           
-          {/* Acesso rápido para desenvolvimento */}
+          {/* Acesso rápido para desenvolvimento - sempre aparece, mas com destaque se não estiver em modo dev */}
           <div className="card p-8">
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-12 h-12 mb-4 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
                 <Sun className="w-6 h-6 text-orange-600 dark:text-orange-400" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Acesso Rápido
+                Contas de Teste
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Para desenvolvimento e testes
+                Para desenvolvimento e demonstração
               </p>
             </div>
             
@@ -228,8 +240,8 @@ export default function Login() {
                   <div key={userType} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                     <div className="flex items-start space-x-3 mb-3">
                       <div className="flex-shrink-0">
-                        <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/20 rounded-lg flex items-center justify-center">
-                          <IconComponent className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                        <div className={`w-10 h-10 rounded-lg bg-gradient-to-r ${userData.color} flex items-center justify-center shadow-lg`}>
+                          <IconComponent className="w-5 h-5 text-white" />
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">

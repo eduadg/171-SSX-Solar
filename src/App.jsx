@@ -9,12 +9,16 @@ import Login from './components/auth/Login';
 import PrivateRoute from './components/auth/PrivateRoute';
 import RoleRoute from './components/auth/RoleRoute';
 
+// Dev Components
+import DevButton from './components/dev/DevButton';
+
 // Dashboard Router
 import DashboardRouter from './pages/Dashboard';
 
 // Client Components
 import ClientDashboard from './components/client/Dashboard';
 import ServiceRequestForm from './components/client/ServiceRequestForm';
+import ServiceHistory from './components/client/ServiceHistory';
 
 // Installer Components
 import InstallerDashboard from './components/installer/Dashboard';
@@ -31,6 +35,8 @@ function App() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       <AuthProvider>
         <Router>
+          {/* Botão DEV Global - aparece em todas as páginas durante desenvolvimento */}
+          <DevButton />
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
@@ -45,7 +51,7 @@ function App() {
                 <Route element={<RoleRoute allowedRoles={['client']} />}>
                   <Route path="/client/dashboard" element={<ClientDashboard />} />
                   <Route path="/request-service" element={<ServiceRequestForm />} />
-                  <Route path="/service-history" element={<h1>Histórico de Serviços</h1>} />
+                  <Route path="/service-history" element={<ServiceHistory />} />
                   <Route path="/service-details/:id" element={<h1>Detalhes do Serviço</h1>} />
                   <Route path="/confirm-service/:id" element={<h1>Confirmar Serviço</h1>} />
                   <Route path="/profile" element={<h1>Perfil do Cliente</h1>} />

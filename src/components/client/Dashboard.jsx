@@ -64,34 +64,149 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [serviceRequests, setServiceRequests] = useState([]);
   const [error, setError] = useState('');
+
+  // Função helper para formatar endereço de forma segura
+  const formatAddress = (address) => {
+    try {
+      // Se não há endereço
+      if (!address) {
+        return 'Endereço não informado';
+      }
+      
+      // Se é uma string, retornar diretamente
+      if (typeof address === 'string') {
+        return address;
+      }
+      
+      // Se não é um objeto, converter para string
+      if (typeof address !== 'object') {
+        return String(address);
+      }
+      
+      // Destruturar com valores padrão
+      const { 
+        street = '', 
+        number = '', 
+        complement = '',
+        neighborhood = '', 
+        city = '', 
+        state = '' 
+      } = address;
+      
+      // Converter todos para strings seguras
+      const parts = [
+        String(street || '').trim(),
+        String(number || '').trim()
+      ].filter(Boolean);
+      
+      const location = [
+        String(neighborhood || '').trim(),
+        String(city || '').trim(),
+        String(state || '').trim()
+      ].filter(Boolean);
+      
+      if (parts.length === 0) {
+        return 'Endereço não informado';
+      }
+      
+      let result = parts.join(', ');
+      if (String(complement || '').trim()) {
+        result += ` - ${String(complement).trim()}`;
+      }
+      if (location.length > 0) {
+        result += ` - ${location.join(', ')}`;
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('❌ [CLIENT DASHBOARD] Erro ao formatar endereço:', error, address);
+      return 'Erro no endereço';
+    }
+  };
+  
+  // Debug básico
+  if (import.meta.env.DEV) {
+    console.log('🔍 [CLIENT DASHBOARD] Usuário:', currentUser?.email, 'Loading:', loading);
+  }
   
   useEffect(() => {
+    console.log('🔄 [CLIENT DASHBOARD] useEffect executado');
+    console.log('🔄 [CLIENT DASHBOARD] Current user no useEffect:', currentUser);
+    
     async function fetchServiceRequests() {
       try {
+        // Verificação de segurança para currentUser
+        if (!currentUser) {
+          console.warn('⚠️ [CLIENT DASHBOARD] Current user é null/undefined');
+          setError('Usuário não encontrado. Tente fazer login novamente.');
+          setLoading(false);
+          return;
+        }
+        
+        if (!currentUser.uid) {
+          console.warn('⚠️ [CLIENT DASHBOARD] Current user não tem UID');
+          setError('ID do usuário não encontrado. Tente fazer login novamente.');
+          setLoading(false);
+          return;
+        }
+        
+        console.log('🔍 [CLIENT DASHBOARD] Buscando solicitações para UID:', currentUser.uid);
         setLoading(true);
+        setError(''); // Limpar erro anterior
+        
         const requests = await getClientServiceRequests(currentUser.uid);
-        setServiceRequests(requests);
+        console.log('✅ [CLIENT DASHBOARD] Solicitações recebidas:', requests);
+        
+        // Verificar estrutura dos dados para debug
+        if (requests && requests.length > 0) {
+          console.log('🔍 [CLIENT DASHBOARD] Primeira solicitação:', requests[0]);
+          console.log('🔍 [CLIENT DASHBOARD] Estrutura do endereço:', requests[0]?.address);
+        }
+        
+        setServiceRequests(requests || []); // Garantir que nunca seja null/undefined
+        
       } catch (error) {
-        console.error('Error fetching service requests:', error);
-        setError('Erro ao carregar solicitações de serviço.');
+        console.error('❌ [CLIENT DASHBOARD] Erro ao buscar solicitações:', error);
+        setError(`Erro ao carregar solicitações de serviço: ${error.message}`);
+        setServiceRequests([]); // Garantir que seja um array vazio em caso de erro
       } finally {
+        console.log('🏁 [CLIENT DASHBOARD] Finalizando carregamento...');
         setLoading(false);
       }
     }
     
-    fetchServiceRequests();
+    // Só executar se currentUser existir
+    if (currentUser) {
+      fetchServiceRequests();
+    } else {
+      console.warn('⚠️ [CLIENT DASHBOARD] CurrentUser não existe, não buscando solicitações');
+      setLoading(false);
+    }
   }, [currentUser]);
   
+  // Verificações de segurança para evitar erros de renderização
+  const safeServiceRequests = Array.isArray(serviceRequests) ? serviceRequests : [];
+  
   // Filtra as solicitações recentes (últimas 5)
-  const recentRequests = serviceRequests.slice(0, 5);
+  const recentRequests = safeServiceRequests.slice(0, 5);
   
-  // Conta solicitações por status
-  const pendingCount = serviceRequests.filter(req => req.status === 'pending' || req.status === 'approved').length;
-  const inProgressCount = serviceRequests.filter(req => req.status === 'assigned' || req.status === 'in_progress').length;
-  const completedCount = serviceRequests.filter(req => req.status === 'completed').length;
-  const needsConfirmationCount = serviceRequests.filter(req => req.status === 'completed').length;
+  // Conta solicitações por status - com verificação de segurança
+  const pendingCount = safeServiceRequests.filter(req => req && (req.status === 'pending' || req.status === 'approved')).length;
+  const inProgressCount = safeServiceRequests.filter(req => req && (req.status === 'assigned' || req.status === 'in_progress')).length;
+  const completedCount = safeServiceRequests.filter(req => req && req.status === 'completed').length;
+  const needsConfirmationCount = safeServiceRequests.filter(req => req && req.status === 'completed').length;
   
+  console.log('📊 [CLIENT DASHBOARD] Estatísticas calculadas:', {
+    total: safeServiceRequests.length,
+    pending: pendingCount,
+    inProgress: inProgressCount,
+    completed: completedCount,
+    needsConfirmation: needsConfirmationCount
+  });
+  
+  // Estado de carregamento
   if (loading) {
+    console.log('⏳ [CLIENT DASHBOARD] Mostrando estado de loading...');
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -102,16 +217,42 @@ export default function ClientDashboard() {
     );
   }
 
+  // Estado de erro
   if (error) {
+    console.log('❌ [CLIENT DASHBOARD] Mostrando estado de erro:', error);
     return (
       <div className="card p-6">
         <div className="flex items-center text-red-600 dark:text-red-400">
           <AlertCircle className="w-5 h-5 mr-2" />
           <p>{error}</p>
         </div>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-4 btn-primary"
+        >
+          Recarregar Página
+        </button>
       </div>
     );
   }
+  
+  // Verificação final de segurança
+  if (!currentUser) {
+    console.log('⚠️ [CLIENT DASHBOARD] CurrentUser é null na renderização final');
+    return (
+      <div className="card p-6">
+        <div className="flex items-center text-red-600 dark:text-red-400">
+          <AlertCircle className="w-5 h-5 mr-2" />
+          <p>Sessão expirada. Por favor, faça login novamente.</p>
+        </div>
+        <Link to="/login" className="mt-4 btn-primary inline-block">
+          Fazer Login
+        </Link>
+      </div>
+    );
+  }
+  
+  console.log('🎯 [CLIENT DASHBOARD] Renderizando dashboard completa...');
   
   return (
     <div className="space-y-6 animate-fade-in">
@@ -121,8 +262,10 @@ export default function ClientDashboard() {
           Dashboard do Cliente
         </h1>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Bem-vindo(a) ao seu painel de controle. Gerencie suas solicitações de instalação solar.
+          Bem-vindo(a) ao seu painel de controle, {currentUser.name || currentUser.email}. Gerencie suas solicitações de instalação solar.
         </p>
+        
+
       </div>
       
       {/* Estatísticas rápidas */}
@@ -260,58 +403,68 @@ export default function ClientDashboard() {
         </div>
         
         {recentRequests.length === 0 ? (
-          <div className="text-center py-8">
-            <Zap className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Plus className="w-8 h-8 text-gray-400" />
+            </div>
             <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               Nenhuma solicitação ainda
             </h4>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Faça sua primeira solicitação de instalação solar!
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Você ainda não fez nenhuma solicitação de serviço. Clique no botão abaixo para começar.
             </p>
-            <Link 
-              to="/request-service"
-              className="btn-primary inline-flex items-center space-x-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Solicitar Primeiro Serviço</span>
+            <Link to="/request-service" className="btn-primary">
+              Fazer Primeira Solicitação
             </Link>
           </div>
         ) : (
           <div className="space-y-4">
-            {recentRequests.map((request) => (
-              <div key={request.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900 dark:text-white">
-                    {request.serviceType || 'Instalação Solar'}
-                  </h4>
-                  <StatusBadge status={request.status} />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-400">
-                  <div>
-                    <span className="font-medium">Data:</span> {new Date(request.createdAt?.toDate()).toLocaleDateString()}
+            {recentRequests.map((request) => {
+              // Verificação de segurança
+              if (!request || !request.id) {
+                console.warn('⚠️ [CLIENT DASHBOARD] Solicitação inválida:', request);
+                return null;
+              }
+              
+              return (
+              <div key={request.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h4 className="font-medium text-gray-900 dark:text-white">
+                        {String(request.notes || request.description || 
+                         (request.equipmentType === 'solar_heater' ? 'Aquecedor Solar' : 'Aquecedor a Gás'))
+                        }
+                      </h4>
+                      <StatusBadge status={request.status || 'pending'} />
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      {formatAddress(request.address)}
+                    </p>
+                    <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                      <span>
+                        Criado: {request.createdAt?.seconds 
+                          ? new Date(request.createdAt.seconds * 1000).toLocaleDateString('pt-BR')
+                          : 'Data não disponível'
+                        }
+                      </span>
+                      {request.installerId && (
+                        <span>
+                          Instalador: {String(request.installerName || request.installerId)}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-medium">Endereço:</span> {request.address?.street}, {request.address?.city}
-                  </div>
-                </div>
-                {request.description && (
-                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                    {request.description}
-                  </p>
-                )}
-                <div className="mt-3 flex items-center justify-between">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    ID: {request.id}
-                  </div>
-                  <Link
+                  <Link 
                     to={`/service-details/${request.id}`}
                     className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium"
                   >
-                    Ver detalhes →
+                    Ver detalhes
                   </Link>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
