@@ -1,20 +1,12 @@
 [build]
-  # Comando para fazer o build do projeto
-  command = "npm run build"
-  
-  # Diretório onde ficam os arquivos buildados
+  command = "npm ci && npm run build"
   publish = "dist"
-  
-  # Diretório base do projeto
-  base = "."
 
-# Configurações de redirecionamento para SPA (Single Page Application)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Headers de segurança
 [[headers]]
   for = "/*"
   [headers.values]
@@ -23,34 +15,10 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
-# Headers para assets estáticos (cache)
 [[headers]]
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Headers para o service worker (se houver)
-[[headers]]
-  for = "/sw.js"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
-
-# Configurações de variáveis de ambiente
 [build.environment]
-  # Versão do Node.js (recomendado usar LTS)
-  NODE_VERSION = "18"
-  
-  # Configurações do NPM
-  NPM_FLAGS = "--prefix=/opt/buildhome/.local"
-
-# Configurações para preview builds
-[context.deploy-preview]
-  command = "npm run build"
-
-# Configurações para branch builds
-[context.branch-deploy]
-  command = "npm run build"
-
-# Configurações específicas para produção
-[context.production]
-  command = "npm run build" 
+  NODE_VERSION = "18" 

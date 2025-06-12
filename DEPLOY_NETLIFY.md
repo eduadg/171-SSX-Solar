@@ -17,12 +17,20 @@
 
 ### 2. Configurações de Build
 
-O Netlify detectará automaticamente as configurações do `netlify.toml`, mas verifique:
+O Netlify detectará automaticamente as configurações do `netlify.toml`, mas se houver problemas, configure manualmente:
 
-```
-Build command: npm run build
-Publish directory: dist
-```
+**Configuração Automática (recomendada):**
+- O arquivo `netlify.toml` já está configurado
+- Build command: `npm ci && npm run build`
+- Publish directory: `dist`
+
+**Configuração Manual (se necessário):**
+1. Vá em `Site settings > Build & deploy`
+2. Configure:
+   ```
+   Build command: npm ci && npm run build
+   Publish directory: dist
+   ```
 
 ### 3. Variáveis de Ambiente
 
@@ -112,9 +120,18 @@ npm run firebase:dev
 
 ## 🐛 Solução de Problemas
 
-### Build Falha
+### Build Falha - "Could not read package.json"
+**Problema:** Erro NPM_FLAGS ou configuração de diretório incorreta
+**Solução:**
+1. Verificar se `netlify.toml` está simplificado (sem NPM_FLAGS)
+2. Ou configurar manualmente no Netlify:
+   - Build command: `npm ci && npm run build`
+   - Publish directory: `dist`
+
+### Build Falha - Dependências
 - Verificar `package.json` e `netlify.toml`
 - Conferir logs de build no Netlify
+- Tentar comando manual: `npm ci && npm run build`
 
 ### Site Carrega mas Firebase Não Funciona
 - Verificar variáveis de ambiente no Netlify
