@@ -271,30 +271,42 @@ export const getProductsByType = async (productType) => {
   }
 
   try {
-    return await withTimeout(async () => {
-      const q = query(
-        collection(db, 'products'),
-        where('type', '==', productType),
-        orderBy('createdAt', 'desc')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const products = [];
-      
-      querySnapshot.forEach((doc) => {
-        products.push({
-          id: doc.id,
-          ...doc.data()
-        });
+    console.log(`🔥 [FIREBASE] Buscando produtos do tipo: ${productType}`);
+    
+    const q = query(
+      collection(db, 'products'),
+      where('type', '==', productType),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const products = [];
+    
+    querySnapshot.forEach((doc) => {
+      products.push({
+        id: doc.id,
+        ...doc.data()
       });
-      
-      return products;
     });
+    
+    console.log(`✅ [FIREBASE] Encontrados ${products.length} produtos do tipo ${productType}`);
+    
+    // Se não encontrou produtos no Firestore, usar mock como fallback
+    if (products.length === 0) {
+      console.warn('⚠️ [FIREBASE] Nenhum produto encontrado no Firestore, usando mock como fallback');
+      const filteredProducts = mockProducts.filter(product => product.type === productType);
+      console.log(`🔧 [FALLBACK] Usando ${filteredProducts.length} produtos mock`);
+      return filteredProducts;
+    }
+    
+    return products;
   } catch (error) {
-    console.error('Error getting products by type:', error);
+    console.error('❌ [FIREBASE] Erro ao buscar produtos:', error);
     // Fallback para dados mock em qualquer erro
-    console.warn('⚠️ Firebase erro, usando dados mock como fallback');
-    return mockProducts.filter(product => product.type === productType);
+    console.warn('⚠️ [FIREBASE] Erro no Firebase, usando dados mock como fallback');
+    const filteredProducts = mockProducts.filter(product => product.type === productType);
+    console.log(`🔧 [FALLBACK] Usando ${filteredProducts.length} produtos mock`);
+    return filteredProducts;
   }
 };
 

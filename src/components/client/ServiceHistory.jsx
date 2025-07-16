@@ -138,11 +138,21 @@ export default function ServiceHistory() {
         setLoading(true);
         setError('');
         
+        console.log('🔄 [SERVICE HISTORY] Buscando solicitações para:', currentUser.uid);
         const requests = await getClientServiceRequests(currentUser.uid);
-        setServiceRequests(requests || []);
+        console.log('✅ [SERVICE HISTORY] Solicitações recebidas:', requests);
+        
+        // Garantir que requests seja sempre um array
+        if (Array.isArray(requests)) {
+          setServiceRequests(requests);
+          console.log(`✅ [SERVICE HISTORY] ${requests.length} solicitações definidas`);
+        } else {
+          console.warn('⚠️ [SERVICE HISTORY] Requests não é um array:', requests);
+          setServiceRequests([]);
+        }
         
       } catch (error) {
-        console.error('Error fetching service requests:', error);
+        console.error('❌ [SERVICE HISTORY] Erro ao buscar solicitações:', error);
         setError(`Erro ao carregar histórico: ${error.message}`);
         setServiceRequests([]);
       } finally {
@@ -157,7 +167,20 @@ export default function ServiceHistory() {
 
   // Filtrar e ordenar solicitações
   useEffect(() => {
+    console.log('🔄 [SERVICE HISTORY] Filtrando solicitações...');
+    console.log('📋 [SERVICE HISTORY] serviceRequests:', serviceRequests);
+    console.log('📋 [SERVICE HISTORY] Tipo de serviceRequests:', typeof serviceRequests);
+    console.log('📋 [SERVICE HISTORY] É array?', Array.isArray(serviceRequests));
+    
+    // Garantir que serviceRequests seja sempre um array
+    if (!Array.isArray(serviceRequests)) {
+      console.warn('⚠️ [SERVICE HISTORY] serviceRequests não é um array:', serviceRequests);
+      setFilteredRequests([]);
+      return;
+    }
+
     let filtered = [...serviceRequests];
+    console.log('📋 [SERVICE HISTORY] Solicitações antes dos filtros:', filtered.length);
 
     // Filtro por texto
     if (searchTerm) {
@@ -167,20 +190,26 @@ export default function ServiceHistory() {
         request.address?.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         request.clientName?.toLowerCase().includes(searchTerm.toLowerCase())
       );
+      console.log('📋 [SERVICE HISTORY] Após filtro de texto:', filtered.length);
     }
 
     // Filtro por status
     if (statusFilter !== 'all') {
       filtered = filtered.filter(request => request.status === statusFilter);
+      console.log('📋 [SERVICE HISTORY] Após filtro de status:', filtered.length);
     }
 
     // Ordenação
     switch (sortBy) {
       case 'date':
-        filtered.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+        filtered.sort((a, b) => {
+          const dateA = a.createdAt?.seconds || 0;
+          const dateB = b.createdAt?.seconds || 0;
+          return dateB - dateA;
+        });
         break;
       case 'status':
-        filtered.sort((a, b) => a.status.localeCompare(b.status));
+        filtered.sort((a, b) => (a.status || '').localeCompare(b.status || ''));
         break;
       case 'priority': {
         const priorityOrder = { urgent: 0, high: 1, normal: 2, low: 3 };
@@ -191,6 +220,8 @@ export default function ServiceHistory() {
         break;
     }
 
+    console.log('📋 [SERVICE HISTORY] Solicitações filtradas finais:', filtered);
+    console.log('📊 [SERVICE HISTORY] Total de solicitações filtradas:', filtered.length);
     setFilteredRequests(filtered);
   }, [serviceRequests, searchTerm, statusFilter, sortBy]);
 
@@ -322,109 +353,117 @@ export default function ServiceHistory() {
       </div>
 
       {/* Lista de solicitações */}
-      {filteredRequests.length === 0 ? (
-        <div className="card p-12 text-center">
-          <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            {serviceRequests.length === 0 ? 'Nenhuma solicitação encontrada' : 'Nenhum resultado para os filtros aplicados'}
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            {serviceRequests.length === 0 
-              ? 'Você ainda não fez nenhuma solicitação de serviço. Que tal começar agora?'
-              : 'Tente ajustar os filtros ou termo de busca para encontrar o que procura.'
-            }
-          </p>
-          {serviceRequests.length === 0 && (
-            <Link to="/request-service" className="btn-primary">
-              Fazer Primeira Solicitação
-            </Link>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredRequests.map((request) => (
-            <div key={request.id} className="card p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/20 rounded-lg flex items-center justify-center">
-                    <EquipmentIcon equipmentType={request.equipmentType} />
+      {(() => {
+        console.log('🎨 [SERVICE HISTORY] Renderizando lista de solicitações...');
+        console.log('📋 [SERVICE HISTORY] filteredRequests:', filteredRequests);
+        console.log('📊 [SERVICE HISTORY] filteredRequests.length:', filteredRequests.length);
+        console.log('📋 [SERVICE HISTORY] serviceRequests:', serviceRequests);
+        console.log('📊 [SERVICE HISTORY] serviceRequests.length:', serviceRequests.length);
+        
+        return filteredRequests.length === 0 ? (
+          <div className="card p-12 text-center">
+            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              {serviceRequests.length === 0 ? 'Nenhuma solicitação encontrada' : 'Nenhum resultado para os filtros aplicados'}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {serviceRequests.length === 0 
+                ? 'Você ainda não fez nenhuma solicitação de serviço. Que tal começar agora?'
+                : 'Tente ajustar os filtros ou termo de busca para encontrar o que procura.'
+              }
+            </p>
+            {serviceRequests.length === 0 && (
+              <Link to="/request-service" className="btn-primary">
+                Fazer Primeira Solicitação
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredRequests.map((request) => (
+              <div key={request.id} className="card p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/20 rounded-lg flex items-center justify-center">
+                      <EquipmentIcon equipmentType={request.equipmentType} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {request.equipmentType === 'solar_heater' ? 'Aquecedor Solar' : 'Aquecedor a Gás'}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Solicitação #{request.id}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {request.equipmentType === 'solar_heater' ? 'Aquecedor Solar' : 'Aquecedor a Gás'}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Solicitação #{request.id}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <PriorityBadge priority={request.priority} />
-                  <StatusBadge status={request.status} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div className="flex items-start space-x-3">
-                  <MapPin className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Endereço</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {formatAddress(request.address)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3">
-                  <Calendar className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Data de Criação</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {formatDate(request.createdAt)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {request.notes && (
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">Observações</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded p-3">
-                    {request.notes}
-                  </p>
-                </div>
-              )}
-
-              {request.installerName && (
-                <div className="mb-4">
                   <div className="flex items-center space-x-2">
-                    <User className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      Instalador: {request.installerName}
-                    </span>
+                    <PriorityBadge priority={request.priority} />
+                    <StatusBadge status={request.status} />
                   </div>
                 </div>
-              )}
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  Última atualização: {formatDate(request.updatedAt)}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="flex items-start space-x-3">
+                    <MapPin className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Endereço</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {formatAddress(request.address)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <Calendar className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Data de Criação</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {formatDate(request.createdAt)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <button 
-                  className="btn-secondary text-sm flex items-center space-x-2"
-                  onClick={() => {
-                    // TODO: Implementar visualização detalhada
-                    console.log('Ver detalhes da solicitação:', request.id);
-                  }}
-                >
-                  <Eye className="w-4 h-4" />
-                  <span>Ver Detalhes</span>
-                </button>
+
+                {request.notes && (
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">Observações</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded p-3">
+                      {request.notes}
+                    </p>
+                  </div>
+                )}
+
+                {request.installerName && (
+                  <div className="mb-4">
+                    <div className="flex items-center space-x-2">
+                      <User className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        Instalador: {request.installerName}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Última atualização: {formatDate(request.updatedAt)}
+                  </div>
+                  <button 
+                    className="btn-secondary text-sm flex items-center space-x-2"
+                    onClick={() => {
+                      // TODO: Implementar visualização detalhada
+                      console.log('Ver detalhes da solicitação:', request.id);
+                    }}
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Ver Detalhes</span>
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 } 

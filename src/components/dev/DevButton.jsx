@@ -11,7 +11,8 @@ import {
   Home,
   LogOut,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Bug
 } from 'lucide-react';
 
 // 🔧 DETECÇÃO DE MODO DESENVOLVIMENTO
@@ -132,6 +133,12 @@ export default function DevButton() {
     setShowDevPanel(false);
   }
 
+  // Função para acessar painel debug
+  function handleGoToDebug() {
+    navigate('/dev/debug');
+    setShowDevPanel(false);
+  }
+
   return (
     <div className="fixed top-4 left-4 z-[9999]">
       <div className="relative">
@@ -212,6 +219,14 @@ export default function DevButton() {
                 >
                   <RefreshCw className="w-4 h-4" />
                   <span>Reload</span>
+                </button>
+                
+                <button
+                  onClick={handleGoToDebug}
+                  className="flex items-center space-x-2 px-3 py-2 bg-yellow-100 dark:bg-yellow-900/30 hover:bg-yellow-200 dark:hover:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400 rounded-lg transition-colors text-sm col-span-2"
+                >
+                  <Bug className="w-4 h-4" />
+                  <span>Painel Debug</span>
                 </button>
                 
                 {currentUser && (

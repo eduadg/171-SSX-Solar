@@ -11,6 +11,7 @@ import RoleRoute from './components/auth/RoleRoute';
 
 // Dev Components
 import DevButton from './components/dev/DevButton';
+import DashboardDebug from './components/dev/DashboardDebug';
 
 // Dashboard Router
 import DashboardRouter from './pages/Dashboard';
@@ -47,6 +48,9 @@ function App() {
             {/* Private routes - require authentication */}
             <Route element={<PrivateRoute />}>
               <Route element={<MainLayout />}>
+                {/* Dev routes - apenas em desenvolvimento */}
+                <Route path="/dev/debug" element={<DashboardDebug />} />
+                
                 {/* Client routes */}
                 <Route element={<RoleRoute allowedRoles={['client']} />}>
                   <Route path="/client/dashboard" element={<ClientDashboard />} />

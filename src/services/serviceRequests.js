@@ -58,13 +58,23 @@ const withTimeout = async (promise, timeoutMs = 5000) => {
 
 // Criar uma nova solicitação de serviço
 export const createServiceRequest = async (serviceData) => {
+  console.log('📝 [SERVICE REQUEST] Iniciando criação de solicitação...');
+  console.log('📋 [SERVICE REQUEST] Dados recebidos:', serviceData);
+  
   if (isDevelopmentMode()) {
     console.log('🔧 [DEV MODE] Criando solicitação mock:', serviceData);
     await new Promise(resolve => setTimeout(resolve, 500)); // Simula delay de rede
     
+    // Mapear UID real para ID mock se necessário
+    let mockServiceData = { ...serviceData };
+    if (serviceData.clientId === 'm9lwdL1jS0PkeBqOfB7x7rz27NR2') {
+      mockServiceData.clientId = 'client-123';
+      console.log('🔄 [DEV MODE] Mapeando UID real para ID mock na criação:', serviceData.clientId, '->', mockServiceData.clientId);
+    }
+    
     // Usar mockPersistence para persistir a solicitação
     const newRequest = mockPersistence.addServiceRequest({
-      ...serviceData,
+      ...mockServiceData,
       status: SERVICE_STATUS.PENDING
     });
     
@@ -73,58 +83,93 @@ export const createServiceRequest = async (serviceData) => {
   }
 
   try {
-    return await withTimeout(async () => {
-      const serviceRequestRef = await addDoc(collection(db, 'serviceRequests'), {
-        ...serviceData,
-        status: SERVICE_STATUS.PENDING,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      
-      return { id: serviceRequestRef.id, ...serviceData };
+    console.log('🔥 [FIREBASE] Criando solicitação no Firestore...');
+    console.log('📋 [FIREBASE] Dados para salvar:', {
+      ...serviceData,
+      status: SERVICE_STATUS.PENDING,
+      createdAt: 'serverTimestamp()',
+      updatedAt: 'serverTimestamp()',
     });
+    
+    const result = await withTimeout(
+      (async () => {
+        const serviceRequestRef = await addDoc(collection(db, 'serviceRequests'), {
+          ...serviceData,
+          status: SERVICE_STATUS.PENDING,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        
+        const savedData = { id: serviceRequestRef.id, ...serviceData };
+        console.log('✅ [FIREBASE] Solicitação salva com ID:', serviceRequestRef.id);
+        console.log('📋 [FIREBASE] Dados salvos:', savedData);
+        return savedData;
+      })()
+    );
+    
+    console.log('✅ [SERVICE REQUEST] Solicitação criada com sucesso:', result);
+    return result;
   } catch (error) {
-    console.error('Error creating service request:', error);
+    console.error('❌ [SERVICE REQUEST] Erro ao criar solicitação:', error);
     throw error;
   }
 };
 
 // Obter solicitações de serviço de um cliente específico
 export const getClientServiceRequests = async (clientId) => {
+  console.log('🔍 [SERVICE REQUESTS] Buscando solicitações para cliente:', clientId);
+  
   if (isDevelopmentMode()) {
     console.log('🔧 [DEV MODE] Buscando solicitações mock para cliente:', clientId);
     await new Promise(resolve => setTimeout(resolve, 800)); // Simula delay de rede
     
-    const clientRequests = mockPersistence.getServiceRequestsByClientId(clientId);
-    console.log(`📋 [DEV MODE] Encontradas ${clientRequests.length} solicitações para cliente ${clientId}`);
+    // Mapear UID real para ID mock se necessário
+    let mockClientId = clientId;
+    if (clientId === 'm9lwdL1jS0PkeBqOfB7x7rz27NR2') {
+      mockClientId = 'client-123';
+      console.log('🔄 [DEV MODE] Mapeando UID real para ID mock:', clientId, '->', mockClientId);
+    }
+    
+    const clientRequests = mockPersistence.getServiceRequestsByClientId(mockClientId);
+    console.log(`📋 [DEV MODE] Encontradas ${clientRequests.length} solicitações para cliente ${mockClientId}`);
+    console.log('📋 [DEV MODE] Detalhes das solicitações:', clientRequests);
     return clientRequests.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
   }
 
   try {
-    return await withTimeout(async () => {
-      const q = query(
-        collection(db, 'serviceRequests'),
-        where('clientId', '==', clientId),
-        orderBy('createdAt', 'desc')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const serviceRequests = [];
-      
-      querySnapshot.forEach((doc) => {
-        serviceRequests.push({
-          id: doc.id,
-          ...doc.data()
-        });
+    console.log(`🔥 [FIREBASE] Buscando solicitações para cliente: ${clientId}`);
+    
+    const q = query(
+      collection(db, 'serviceRequests'),
+      where('clientId', '==', clientId),
+      orderBy('createdAt', 'desc')
+    );
+    
+    console.log('🔥 [FIREBASE] Query criada, executando...');
+    const querySnapshot = await getDocs(q);
+    console.log('🔥 [FIREBASE] Query executada, processando resultados...');
+    
+    const serviceRequests = [];
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      console.log('📋 [FIREBASE] Documento encontrado:', { id: doc.id, ...data });
+      serviceRequests.push({
+        id: doc.id,
+        ...data
       });
-      
-      return serviceRequests;
     });
+    
+    console.log(`✅ [FIREBASE] Encontradas ${serviceRequests.length} solicitações para cliente ${clientId}`);
+    console.log('📋 [FIREBASE] Detalhes das solicitações:', serviceRequests);
+    return serviceRequests;
   } catch (error) {
-    console.error('Error getting client service requests:', error);
+    console.error('❌ [FIREBASE] Erro ao buscar solicitações:', error);
     // Fallback para dados mock em caso de erro
-    console.warn('⚠️ Firebase erro, usando dados mock como fallback');
-    return mockPersistence.getServiceRequestsByClientId(clientId);
+    console.warn('⚠️ [FIREBASE] Erro no Firebase, usando dados mock como fallback');
+    const clientRequests = mockPersistence.getServiceRequestsByClientId(clientId);
+    console.log(`🔧 [FALLBACK] Usando ${clientRequests.length} solicitações mock`);
+    return clientRequests;
   }
 };
 
@@ -140,25 +185,27 @@ export const getInstallerServiceRequests = async (installerId) => {
   }
 
   try {
-    return await withTimeout(async () => {
-      const q = query(
-        collection(db, 'serviceRequests'),
-        where('installerId', '==', installerId),
-        orderBy('createdAt', 'desc')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const serviceRequests = [];
-      
-      querySnapshot.forEach((doc) => {
-        serviceRequests.push({
-          id: doc.id,
-          ...doc.data()
+    return await withTimeout(
+      (async () => {
+        const q = query(
+          collection(db, 'serviceRequests'),
+          where('installerId', '==', installerId),
+          orderBy('createdAt', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const serviceRequests = [];
+        
+        querySnapshot.forEach((doc) => {
+          serviceRequests.push({
+            id: doc.id,
+            ...doc.data()
+          });
         });
-      });
-      
-      return serviceRequests;
-    });
+        
+        return serviceRequests;
+      })()
+    );
   } catch (error) {
     console.error('Error getting installer service requests:', error);
     // Fallback para dados mock
@@ -179,24 +226,26 @@ export const getAllServiceRequests = async () => {
   }
 
   try {
-    return await withTimeout(async () => {
-      const q = query(
-        collection(db, 'serviceRequests'),
-        orderBy('createdAt', 'desc')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const serviceRequests = [];
-      
-      querySnapshot.forEach((doc) => {
-        serviceRequests.push({
-          id: doc.id,
-          ...doc.data()
+    return await withTimeout(
+      (async () => {
+        const q = query(
+          collection(db, 'serviceRequests'),
+          orderBy('createdAt', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const serviceRequests = [];
+        
+        querySnapshot.forEach((doc) => {
+          serviceRequests.push({
+            id: doc.id,
+            ...doc.data()
+          });
         });
-      });
-      
-      return serviceRequests;
-    });
+        
+        return serviceRequests;
+      })()
+    );
   } catch (error) {
     console.error('Error getting all service requests:', error);
     // Fallback para dados mock
@@ -220,19 +269,21 @@ export const getServiceRequestById = async (requestId) => {
   }
 
   try {
-    return await withTimeout(async () => {
-      const docRef = doc(db, 'serviceRequests', requestId);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        return {
-          id: docSnap.id,
-          ...docSnap.data()
-        };
-      } else {
-        throw new Error('Service request not found');
-      }
-    });
+    return await withTimeout(
+      (async () => {
+        const docRef = doc(db, 'serviceRequests', requestId);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          return {
+            id: docSnap.id,
+            ...docSnap.data()
+          };
+        } else {
+          throw new Error('Service request not found');
+        }
+      })()
+    );
   } catch (error) {
     console.error('Error getting service request:', error);
     throw error;
@@ -259,17 +310,19 @@ export const updateServiceRequestStatus = async (requestId, status, additionalDa
   }
 
   try {
-    return await withTimeout(async () => {
-      const docRef = doc(db, 'serviceRequests', requestId);
-      
-      await updateDoc(docRef, {
-        status,
-        updatedAt: serverTimestamp(),
-        ...additionalData
-      });
-      
-      return true;
-    });
+    return await withTimeout(
+      (async () => {
+        const docRef = doc(db, 'serviceRequests', requestId);
+        
+        await updateDoc(docRef, {
+          status,
+          updatedAt: serverTimestamp(),
+          ...additionalData
+        });
+        
+        return true;
+      })()
+    );
   } catch (error) {
     console.error('Error updating service request status:', error);
     throw error;
@@ -299,17 +352,19 @@ export const assignInstallerToServiceRequest = async (requestId, installerId) =>
   }
 
   try {
-    return await withTimeout(async () => {
-      const docRef = doc(db, 'serviceRequests', requestId);
-      
-      await updateDoc(docRef, {
-        installerId,
-        status: SERVICE_STATUS.ASSIGNED,
-        updatedAt: serverTimestamp(),
-      });
-      
-      return true;
-    });
+    return await withTimeout(
+      (async () => {
+        const docRef = doc(db, 'serviceRequests', requestId);
+        
+        await updateDoc(docRef, {
+          installerId,
+          status: SERVICE_STATUS.ASSIGNED,
+          updatedAt: serverTimestamp(),
+        });
+        
+        return true;
+      })()
+    );
   } catch (error) {
     console.error('Error assigning installer to service request:', error);
     throw error;
@@ -325,17 +380,19 @@ export const startServiceRequest = async (requestId) => {
   }
 
   try {
-    return await withTimeout(async () => {
-      const docRef = doc(db, 'serviceRequests', requestId);
-      
-      await updateDoc(docRef, {
-        status: SERVICE_STATUS.IN_PROGRESS,
-        startedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      
-      return true;
-    });
+    return await withTimeout(
+      (async () => {
+        const docRef = doc(db, 'serviceRequests', requestId);
+        
+        await updateDoc(docRef, {
+          status: SERVICE_STATUS.IN_PROGRESS,
+          startedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        
+        return true;
+      })()
+    );
   } catch (error) {
     console.error('Error starting service request:', error);
     throw error;
@@ -351,18 +408,20 @@ export const completeServiceRequest = async (requestId, notes) => {
   }
 
   try {
-    return await withTimeout(async () => {
-      const docRef = doc(db, 'serviceRequests', requestId);
-      
-      await updateDoc(docRef, {
-        status: SERVICE_STATUS.COMPLETED,
-        completedAt: serverTimestamp(),
-        technicalNotes: notes,
-        updatedAt: serverTimestamp(),
-      });
-      
-      return true;
-    });
+    return await withTimeout(
+      (async () => {
+        const docRef = doc(db, 'serviceRequests', requestId);
+        
+        await updateDoc(docRef, {
+          status: SERVICE_STATUS.COMPLETED,
+          completedAt: serverTimestamp(),
+          technicalNotes: notes,
+          updatedAt: serverTimestamp(),
+        });
+        
+        return true;
+      })()
+    );
   } catch (error) {
     console.error('Error completing service request:', error);
     throw error;
@@ -378,17 +437,19 @@ export const confirmServiceRequest = async (requestId) => {
   }
 
   try {
-    return await withTimeout(async () => {
-      const docRef = doc(db, 'serviceRequests', requestId);
-      
-      await updateDoc(docRef, {
-        status: SERVICE_STATUS.CONFIRMED,
-        confirmedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      
-      return true;
-    });
+    return await withTimeout(
+      (async () => {
+        const docRef = doc(db, 'serviceRequests', requestId);
+        
+        await updateDoc(docRef, {
+          status: SERVICE_STATUS.CONFIRMED,
+          confirmedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        
+        return true;
+      })()
+    );
   } catch (error) {
     console.error('Error confirming service request:', error);
     throw error;
@@ -404,26 +465,29 @@ export const uploadInstallationImage = async (requestId, file) => {
   }
 
   try {
-    return await withTimeout(async () => {
-      const storageRef = ref(storage, `installations/${requestId}/${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      
-      const docRef = doc(db, 'serviceRequests', requestId);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const images = data.images || [];
+    return await withTimeout(
+      (async () => {
+        const storageRef = ref(storage, `installations/${requestId}/${file.name}`);
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
         
-        await updateDoc(docRef, {
-          images: [...images, { url: downloadURL, uploadedAt: serverTimestamp() }],
-          updatedAt: serverTimestamp(),
-        });
-      }
-      
-      return downloadURL;
-    }, 10000); // Upload tem timeout maior
+        const docRef = doc(db, 'serviceRequests', requestId);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const images = data.images || [];
+          
+          await updateDoc(docRef, {
+            images: [...images, { url: downloadURL, uploadedAt: serverTimestamp() }],
+            updatedAt: serverTimestamp(),
+          });
+        }
+        
+        return downloadURL;
+      })(),
+      10000 // Upload tem timeout maior
+    );
   } catch (error) {
     console.error('Error uploading installation image:', error);
     throw error;

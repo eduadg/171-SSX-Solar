@@ -123,29 +123,38 @@ export function AuthProvider({ children }) {
 
   const getUserRole = useCallback(async (uid) => {
     try {
+      console.log('🔍 [AUTH] Buscando role para UID:', uid);
+      console.log('🔍 [AUTH] Modo mock:', mockMode);
+      
       if (mockMode) {
         // Buscar role do usuário mockado
         const mockUser = Object.values(mockUsers).find(user => user.uid === uid);
         if (mockUser) {
+          console.log('✅ [AUTH] Role encontrado (mock):', mockUser.role);
           setUserRole(mockUser.role);
           return mockUser.role;
         }
+        console.log('❌ [AUTH] Usuário mock não encontrado para UID:', uid);
         return null;
       } else {
         // Buscar role do usuário real
+        console.log('🔥 [AUTH] Buscando no Firestore...');
         const userDocRef = doc(db, 'users', uid);
         const userDoc = await getDoc(userDocRef);
         
         if (userDoc.exists()) {
           const userData = userDoc.data();
+          console.log('✅ [AUTH] Role encontrado (Firestore):', userData.role);
+          console.log('📋 [AUTH] Dados do usuário:', userData);
           setUserRole(userData.role);
           return userData.role;
         }
         
+        console.log('❌ [AUTH] Documento não encontrado no Firestore para UID:', uid);
         return null;
       }
     } catch (error) {
-      console.error("Error fetching user role:", error);
+      console.error("❌ [AUTH] Erro ao buscar role:", error);
       return null;
     }
   }, [mockMode]);
@@ -180,10 +189,14 @@ export function AuthProvider({ children }) {
       console.log('🔥 [AUTH] Configurando listener do Firebase Auth...');
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
         console.log('🔥 [AUTH] Estado de autenticação mudou:', user ? user.email : 'usuário não logado');
+        console.log('🔥 [AUTH] UID do usuário:', user ? user.uid : 'N/A');
         setCurrentUser(user);
         if (user) {
-          await getUserRole(user.uid);
+          console.log('🔥 [AUTH] Chamando getUserRole para UID:', user.uid);
+          const role = await getUserRole(user.uid);
+          console.log('🔥 [AUTH] Role retornado:', role);
         } else {
+          console.log('🔥 [AUTH] Usuário não logado, limpando role');
           setUserRole(null);
         }
         setLoading(false);

@@ -51,11 +51,23 @@ export default function ServiceRequestForm() {
     async function fetchProducts() {
       try {
         setLoading(true);
+        setError('');
+        console.log('🔄 [SERVICE REQUEST] Buscando produtos do tipo:', formData.equipmentType);
+        
         const fetchedProducts = await getProductsByType(formData.equipmentType);
-        setProducts(fetchedProducts);
+        console.log('✅ [SERVICE REQUEST] Produtos recebidos:', fetchedProducts);
+        
+        // Garantir que products seja sempre um array
+        if (Array.isArray(fetchedProducts)) {
+          setProducts(fetchedProducts);
+        } else {
+          console.warn('⚠️ [SERVICE REQUEST] Produtos não são um array:', fetchedProducts);
+          setProducts([]);
+        }
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error('❌ [SERVICE REQUEST] Erro ao carregar produtos:', error);
         setError('Erro ao carregar produtos. Por favor, tente novamente.');
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -105,6 +117,10 @@ export default function ServiceRequestForm() {
   
   const onSubmit = async () => {
     try {
+      console.log('📝 [SERVICE REQUEST FORM] Iniciando submissão...');
+      console.log('📋 [SERVICE REQUEST FORM] Dados do formulário:', formData);
+      console.log('👤 [SERVICE REQUEST FORM] Usuário atual:', currentUser);
+      
       setSubmitting(true);
       setError('');
       
@@ -115,16 +131,21 @@ export default function ServiceRequestForm() {
         clientEmail: currentUser.email,
       };
       
-      await createServiceRequest(serviceData);
+      console.log('📋 [SERVICE REQUEST FORM] Dados completos para envio:', serviceData);
+      
+      const result = await createServiceRequest(serviceData);
+      console.log('✅ [SERVICE REQUEST FORM] Solicitação criada com sucesso:', result);
+      
       setSuccess(true);
       
       // Redirecionar após um breve delay
       setTimeout(() => {
+        console.log('🔄 [SERVICE REQUEST FORM] Redirecionando para /service-history...');
         navigate('/service-history');
       }, 2000);
       
     } catch (error) {
-      console.error('Error submitting service request:', error);
+      console.error('❌ [SERVICE REQUEST FORM] Erro ao enviar solicitação:', error);
       setError('Erro ao enviar solicitação. Por favor, tente novamente.');
     } finally {
       setSubmitting(false);
@@ -207,6 +228,11 @@ export default function ServiceRequestForm() {
                   <Loader2 className="w-6 h-6 text-primary-600 animate-spin mr-2" />
                   <span className="text-gray-600 dark:text-gray-400">Carregando produtos...</span>
                 </div>
+              ) : error ? (
+                <div className="flex items-center justify-center py-8 border-2 border-dashed border-red-300 dark:border-red-600 rounded-lg">
+                  <AlertCircle className="w-6 h-6 text-red-600 mr-2" />
+                  <span className="text-red-600 dark:text-red-400">{error}</span>
+                </div>
               ) : (
                 <select
                   value={formData.productId}
@@ -214,7 +240,7 @@ export default function ServiceRequestForm() {
                   className="input-field"
                 >
                   <option value="">Selecione um produto</option>
-                  {products.map((product) => (
+                  {Array.isArray(products) && products.map((product) => (
                     <option key={product.id} value={product.id}>
                       {product.name} - R$ {product.price?.toFixed(2)}
                     </option>
