@@ -26,6 +26,8 @@ import InstallerDashboard from './components/installer/Dashboard';
 
 // Admin Components
 import AdminDashboard from './components/admin/Dashboard';
+import AdminServiceRequests from './components/admin/AdminServiceRequests';
+import AdminServiceRequestDetails from './components/admin/AdminServiceRequestDetails';
 
 // Shared Pages
 import NotFound from './pages/NotFound';
@@ -56,7 +58,6 @@ function App() {
                   <Route path="/client/dashboard" element={<ClientDashboard />} />
                   <Route path="/request-service" element={<ServiceRequestForm />} />
                   <Route path="/service-history" element={<ServiceHistory />} />
-                  <Route path="/service-details/:id" element={<h1>Detalhes do Serviço</h1>} />
                   <Route path="/confirm-service/:id" element={<h1>Confirmar Serviço</h1>} />
                   <Route path="/profile" element={<h1>Perfil do Cliente</h1>} />
                 </Route>
@@ -65,7 +66,6 @@ function App() {
                 <Route element={<RoleRoute allowedRoles={['installer']} />}>
                   <Route path="/installer/dashboard" element={<InstallerDashboard />} />
                   <Route path="/my-services" element={<h1>Meus Serviços</h1>} />
-                  <Route path="/service-details/:id" element={<h1>Detalhes do Serviço</h1>} />
                   <Route path="/start-service/:id" element={<h1>Iniciar Serviço</h1>} />
                   <Route path="/complete-service/:id" element={<h1>Concluir Serviço</h1>} />
                   <Route path="/service-history" element={<h1>Histórico de Serviços</h1>} />
@@ -75,8 +75,8 @@ function App() {
                 {/* Admin routes */}
                 <Route element={<RoleRoute allowedRoles={['admin']} />}>
                   <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                  <Route path="/service-requests" element={<h1>Solicitações de Serviço</h1>} />
-                  <Route path="/service-details/:id" element={<h1>Detalhes do Serviço</h1>} />
+                  <Route path="/service-requests" element={<AdminServiceRequests />} />
+                  <Route path="/service-details/:id" element={<AdminServiceRequestDetails />} />
                   <Route path="/installers" element={<h1>Gerenciar Instaladores</h1>} />
                   <Route path="/add-installer" element={<h1>Adicionar Instalador</h1>} />
                   <Route path="/clients" element={<h1>Gerenciar Clientes</h1>} />

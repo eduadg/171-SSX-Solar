@@ -216,7 +216,9 @@ class MockPersistence {
 
   // Métodos para Service Requests
   getServiceRequests() {
-    return this.getData().serviceRequests || [];
+    const requests = this.getData().serviceRequests || [];
+    console.log('🟦 [MOCK PERSISTENCE] getServiceRequests retornou', requests.length, 'solicitações:', requests.map(r => r.id));
+    return requests;
   }
 
   addServiceRequest(request) {

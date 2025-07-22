@@ -214,7 +214,6 @@ export const getAllInstallers = async () => {
   if (isDevelopmentMode()) {
     console.log('🔧 [DEV MODE] Retornando instaladores mock');
     await new Promise(resolve => setTimeout(resolve, 500));
-    
     const installers = mockUsers.filter(user => user.role === USER_ROLES.INSTALLER);
     console.log(`🔧 [DEV MODE] Encontrados ${installers.length} instaladores mock`);
     return installers;
@@ -227,18 +226,16 @@ export const getAllInstallers = async () => {
         where('role', '==', USER_ROLES.INSTALLER),
         orderBy('createdAt', 'desc')
       );
-      
       const querySnapshot = await getDocs(q);
       const installers = [];
-      
       querySnapshot.forEach((doc) => {
         installers.push({
           id: doc.id,
           ...doc.data()
         });
       });
-      
-      return installers;
+      console.log(`[FIREBASE] Instaladores encontrados:`, installers);
+      return Array.isArray(installers) ? installers : [];
     });
   } catch (error) {
     console.error('Error getting installers:', error);
@@ -247,7 +244,7 @@ export const getAllInstallers = async () => {
       console.warn('⚠️ Firebase timeout, usando dados mock como fallback');
       return mockUsers.filter(user => user.role === USER_ROLES.INSTALLER);
     }
-    throw error;
+    return [];
   }
 };
 

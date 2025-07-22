@@ -217,11 +217,10 @@ export const getInstallerServiceRequests = async (installerId) => {
 // Obter todas as solicitações de serviço (para administradores)
 export const getAllServiceRequests = async () => {
   if (isDevelopmentMode()) {
-    console.log('🔧 [DEV MODE] Retornando todas as solicitações mock');
+    console.log('🔧 [DEV MODE] getAllServiceRequests chamado (admin)');
     await new Promise(resolve => setTimeout(resolve, 700));
-    
     const allRequests = mockPersistence.getServiceRequests();
-    console.log(`📊 [DEV MODE] Total de ${allRequests.length} solicitações mockadas`);
+    console.log('🔧 [DEV MODE] getAllServiceRequests retornou', allRequests.length, 'solicitações para o admin:', allRequests.map(r => r.id));
     return allRequests.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
   }
 
