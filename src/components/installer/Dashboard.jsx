@@ -13,7 +13,8 @@ import {
   PauseCircle,
   Loader2,
   AlertCircle,
-  Package
+  Package,
+  User
 } from 'lucide-react';
 
 // Componente para exibir o status da solicitação com a cor adequada
@@ -206,6 +207,11 @@ export default function InstallerDashboard() {
                     {request.equipmentType === 'solar_heater' ? 'Aquecedor Solar' : 'Aquecedor a Gás'}
                   </h4>
                   <StatusBadge status={request.status} />
+                </div>
+                {/* Exibir nome do cliente para o instalador */}
+                <div className="flex items-center mb-2 text-sm text-gray-700 dark:text-gray-300">
+                  <User className="w-4 h-4 mr-1" />
+                  <span>{request.clientName || request.clientEmail}</span>
                 </div>
                 
                 <div className="flex items-center mb-3 text-sm text-gray-600 dark:text-gray-400">

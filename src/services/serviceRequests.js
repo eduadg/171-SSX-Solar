@@ -202,8 +202,24 @@ export const getInstallerServiceRequests = async (installerId) => {
             ...doc.data()
           });
         });
-        
-        return serviceRequests;
+
+        // Enriquecer cada solicitação com nome e email do cliente
+        const enrichedRequests = await Promise.all(
+          serviceRequests.map(async (req) => {
+            try {
+              const clientRef = doc(db, 'users', req.clientId);
+              const clientSnap = await getDoc(clientRef);
+              if (clientSnap.exists()) {
+                const clientData = clientSnap.data();
+                return { ...req, clientName: clientData.name, clientEmail: clientData.email };
+              }
+            } catch (e) {
+              console.error('Erro ao buscar dados do cliente:', e);
+            }
+            return req;
+          })
+        );
+        return enrichedRequests;
       })()
     );
   } catch (error) {
@@ -268,21 +284,31 @@ export const getServiceRequestById = async (requestId) => {
   }
 
   try {
-    return await withTimeout(
-      (async () => {
-        const docRef = doc(db, 'serviceRequests', requestId);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-          return {
-            id: docSnap.id,
-            ...docSnap.data()
-          };
-        } else {
-          throw new Error('Service request not found');
+    return await withTimeout((async () => {
+      const docRef = doc(db, 'serviceRequests', requestId);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        throw new Error('Service request not found');
+      }
+
+      // Montar objeto básico
+      const data = docSnap.data();
+      const request = { id: docSnap.id, ...data };
+
+      // Enriquecer com nome do cliente
+      try {
+        const clientRef = doc(db, 'users', data.clientId);
+        const clientSnap = await getDoc(clientRef);
+        if (clientSnap.exists()) {
+          request.clientName = clientSnap.data().name;
         }
-      })()
-    );
+      } catch (e) {
+        console.error('Erro ao buscar nome do cliente:', e);
+      }
+
+      return request;
+    })());
   } catch (error) {
     console.error('Error getting service request:', error);
     throw error;
@@ -360,8 +386,12 @@ export const assignInstallerToServiceRequest = async (requestId, installerId) =>
           status: SERVICE_STATUS.ASSIGNED,
           updatedAt: serverTimestamp(),
         });
-        
-        return true;
+        // Obter documento atualizado e retornar seus dados completos
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          return { id: docSnap.id, ...docSnap.data() };
+        }
+        throw new Error('Não foi possível obter solicitação atualizada');
       })()
     );
   } catch (error) {

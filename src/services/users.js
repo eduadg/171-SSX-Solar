@@ -220,7 +220,7 @@ export const getAllInstallers = async () => {
   }
 
   try {
-    return await withTimeout(async () => {
+    return await withTimeout((async () => {
       const q = query(
         collection(db, 'users'),
         where('role', '==', USER_ROLES.INSTALLER),
@@ -236,7 +236,7 @@ export const getAllInstallers = async () => {
       });
       console.log(`[FIREBASE] Instaladores encontrados:`, installers);
       return Array.isArray(installers) ? installers : [];
-    });
+    })());
   } catch (error) {
     console.error('Error getting installers:', error);
     // Fallback para dados mock

@@ -23,6 +23,7 @@ import ServiceHistory from './components/client/ServiceHistory';
 
 // Installer Components
 import InstallerDashboard from './components/installer/Dashboard';
+import MyServices from './components/installer/MyServices';
 
 // Admin Components
 import AdminDashboard from './components/admin/Dashboard';
@@ -65,7 +66,9 @@ function App() {
                 {/* Installer routes */}
                 <Route element={<RoleRoute allowedRoles={['installer']} />}>
                   <Route path="/installer/dashboard" element={<InstallerDashboard />} />
-                  <Route path="/my-services" element={<h1>Meus Serviços</h1>} />
+                  <Route path="/my-services" element={<MyServices />} />
+                  {/* Permitir que instalador veja detalhes de solicitação */}
+                  <Route path="/service-details/:id" element={<AdminServiceRequestDetails />} />
                   <Route path="/start-service/:id" element={<h1>Iniciar Serviço</h1>} />
                   <Route path="/complete-service/:id" element={<h1>Concluir Serviço</h1>} />
                   <Route path="/service-history" element={<h1>Histórico de Serviços</h1>} />

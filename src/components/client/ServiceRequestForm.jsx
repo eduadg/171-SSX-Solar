@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { createServiceRequest, EQUIPMENT_TYPES } from '../../services/serviceRequests';
+import { getUserById } from '../../services/users';
 import { getProductsByType } from '../../services/products';
 import { 
   ArrowLeft,
@@ -124,11 +125,13 @@ export default function ServiceRequestForm() {
       setSubmitting(true);
       setError('');
       
-      // Adicionar ID do cliente aos dados
+      // Adicionar ID, email e nome do cliente aos dados
+      const user = await getUserById(currentUser.uid);
       const serviceData = {
         ...formData,
         clientId: currentUser.uid,
         clientEmail: currentUser.email,
+        clientName: user?.name || ''
       };
       
       console.log('📋 [SERVICE REQUEST FORM] Dados completos para envio:', serviceData);

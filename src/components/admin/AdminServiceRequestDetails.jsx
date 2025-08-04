@@ -5,6 +5,7 @@ import { getAllInstallers as getAllInstallersService } from '../../services/user
 import { assignInstallerToServiceRequest } from '../../services/serviceRequests';
 import { Loader2, AlertCircle, MapPin, ArrowLeft } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const StatusBadge = ({ status }) => {
   let colorClass = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
@@ -50,6 +51,7 @@ const StatusBadge = ({ status }) => {
 
 export default function AdminServiceRequestDetails() {
   const { id } = useParams();
+  const { userRole } = useAuth();
   const [loading, setLoading] = useState(true);
   const [request, setRequest] = useState(null);
   const [error, setError] = useState('');
@@ -141,9 +143,14 @@ export default function AdminServiceRequestDetails() {
         </div>
         <div className="card p-8 rounded-2xl shadow-xl bg-gray-800/80 border border-gray-700 space-y-6">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between">
               <span className="font-semibold text-gray-300">Cliente:</span>
-              <span className="text-gray-100">{request.clientName || request.clientEmail}</span>
+              <div className="flex flex-col items-end">
+                {request.clientName && (
+                  <span className="text-gray-100">{request.clientName}</span>
+                )}
+                <span className="text-gray-400 text-sm">{request.clientEmail}</span>
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <span className="font-semibold text-gray-300">Equipamento:</span>
@@ -207,8 +214,8 @@ export default function AdminServiceRequestDetails() {
               </div>
             </div>
           )}
-          {/* Botão para abrir modal de atribuição */}
-          {request.status === 'pending' && (
+          {/* Botão de atribuição apenas para admin */}
+          {request.status === 'pending' && userRole === 'admin' && (
             <button
               className="btn-primary w-fit mb-4"
               onClick={openAssignModal}
