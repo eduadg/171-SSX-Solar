@@ -213,6 +213,17 @@ export const getInstallerServiceRequests = async (installerId) => {
                 const clientData = clientSnap.data();
                 return { ...req, clientName: clientData.name, clientEmail: clientData.email };
               }
+              // Fallback por email
+              if (req.clientEmail) {
+                const q = query(collection(db, 'users'), where('email', '==', req.clientEmail));
+                const qs = await getDocs(q);
+                let enriched = req;
+                qs.forEach((d) => {
+                  const u = d.data();
+                  enriched = { ...req, clientName: u?.name || req.clientName, clientEmail: u?.email || req.clientEmail };
+                });
+                return enriched;
+              }
             } catch (e) {
               console.error('Erro ao buscar dados do cliente:', e);
             }
@@ -302,6 +313,14 @@ export const getServiceRequestById = async (requestId) => {
         const clientSnap = await getDoc(clientRef);
         if (clientSnap.exists()) {
           request.clientName = clientSnap.data().name;
+        } else if (data.clientEmail) {
+          // Fallback: buscar por email se o doc por ID não existir
+          const q = query(collection(db, 'users'), where('email', '==', data.clientEmail));
+          const qs = await getDocs(q);
+          qs.forEach((d) => {
+            const u = d.data();
+            if (u?.name) request.clientName = u.name;
+          });
         }
       } catch (e) {
         console.error('Erro ao buscar nome do cliente:', e);

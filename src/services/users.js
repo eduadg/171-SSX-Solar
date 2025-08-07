@@ -260,25 +260,19 @@ export const getAllClients = async () => {
   }
 
   try {
-    return await withTimeout(async () => {
+    return await withTimeout((async () => {
       const q = query(
         collection(db, 'users'),
         where('role', '==', USER_ROLES.CLIENT),
         orderBy('createdAt', 'desc')
       );
-      
       const querySnapshot = await getDocs(q);
       const clients = [];
-      
       querySnapshot.forEach((doc) => {
-        clients.push({
-          id: doc.id,
-          ...doc.data()
-        });
+        clients.push({ id: doc.id, ...doc.data() });
       });
-      
       return clients;
-    });
+    })());
   } catch (error) {
     console.error('Error getting clients:', error);
     // Fallback para dados mock

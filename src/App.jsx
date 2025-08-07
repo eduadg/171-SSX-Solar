@@ -28,6 +28,8 @@ import MyServices from './components/installer/MyServices';
 // Admin Components
 import AdminDashboard from './components/admin/Dashboard';
 import AdminServiceRequests from './components/admin/AdminServiceRequests';
+import ManageInstallers from './components/admin/ManageInstallers';
+import ManageClients from './components/admin/ManageClients';
 import AdminServiceRequestDetails from './components/admin/AdminServiceRequestDetails';
 
 // Shared Pages
@@ -67,8 +69,6 @@ function App() {
                 <Route element={<RoleRoute allowedRoles={['installer']} />}>
                   <Route path="/installer/dashboard" element={<InstallerDashboard />} />
                   <Route path="/my-services" element={<MyServices />} />
-                  {/* Permitir que instalador veja detalhes de solicitação */}
-                  <Route path="/service-details/:id" element={<AdminServiceRequestDetails />} />
                   <Route path="/start-service/:id" element={<h1>Iniciar Serviço</h1>} />
                   <Route path="/complete-service/:id" element={<h1>Concluir Serviço</h1>} />
                   <Route path="/service-history" element={<h1>Histórico de Serviços</h1>} />
@@ -79,14 +79,18 @@ function App() {
                 <Route element={<RoleRoute allowedRoles={['admin']} />}>
                   <Route path="/admin/dashboard" element={<AdminDashboard />} />
                   <Route path="/service-requests" element={<AdminServiceRequests />} />
-                  <Route path="/service-details/:id" element={<AdminServiceRequestDetails />} />
-                  <Route path="/installers" element={<h1>Gerenciar Instaladores</h1>} />
+                  <Route path="/installers" element={<ManageInstallers />} />
                   <Route path="/add-installer" element={<h1>Adicionar Instalador</h1>} />
-                  <Route path="/clients" element={<h1>Gerenciar Clientes</h1>} />
+                  <Route path="/clients" element={<ManageClients />} />
                   <Route path="/products" element={<h1>Gerenciar Produtos</h1>} />
                   <Route path="/add-product" element={<h1>Adicionar Produto</h1>} />
                   <Route path="/reports" element={<h1>Relatórios</h1>} />
                   <Route path="/profile" element={<h1>Perfil do Administrador</h1>} />
+                </Route>
+
+                {/* Shared route for details (admin + installer) */}
+                <Route element={<RoleRoute allowedRoles={['admin','installer']} />}>
+                  <Route path="/service-details/:id" element={<AdminServiceRequestDetails />} />
                 </Route>
               </Route>
             </Route>

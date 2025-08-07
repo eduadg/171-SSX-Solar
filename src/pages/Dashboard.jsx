@@ -17,6 +17,12 @@ export default function DashboardRouter() {
       return;
     }
 
+    // Enquanto a role não estiver carregada, aguardar sem redirecionar
+    if (!userRole) {
+      console.log("Aguardando definição da role antes de redirecionar...");
+      return;
+    }
+
     // Redirecionar com base no papel do usuário
     console.log("Redirecionando para dashboard com role:", userRole);
     console.log("Dados do usuário:", currentUser);
@@ -42,13 +48,7 @@ export default function DashboardRouter() {
     }
 
     setRedirectPath(path);
-    
-    // Pequeno atraso para garantir que os logs apareçam antes do redirecionamento
-    const timer = setTimeout(() => {
-      navigate(path);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
+    navigate(path);
   }, [userRole, currentUser, navigate]);
 
   return (
