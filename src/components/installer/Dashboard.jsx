@@ -173,8 +173,8 @@ export default function InstallerDashboard() {
             <Calendar className="w-5 h-5 mr-2 text-primary-600" />
             Serviços Para Hoje
           </h3>
-          <Link 
-            to="/my-services"
+            <Link 
+              to="/installer/service-history"
             className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium"
           >
             Ver todos →
@@ -304,7 +304,7 @@ export default function InstallerDashboard() {
               <span>Meus Serviços</span>
             </Link>
             <Link 
-              to="/service-history"
+              to="/installer/service-history"
               className="btn-secondary flex items-center justify-center space-x-2"
             >
               <CheckCircle className="w-5 h-5" />

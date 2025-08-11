@@ -15,13 +15,22 @@ class MockPersistence {
   }
 
   hasData() {
-    return !!sessionStorage.getItem(this.storageKey);
+    // Preferir localStorage para persistir entre abas; manter compat com sessionStorage
+    return !!localStorage.getItem(this.storageKey) || !!sessionStorage.getItem(this.storageKey);
   }
 
   getData() {
     try {
-      const data = sessionStorage.getItem(this.storageKey);
-      return data ? JSON.parse(data) : this.getDefaultData();
+      // Migração automática de sessionStorage -> localStorage se necessário
+      const local = localStorage.getItem(this.storageKey);
+      const session = sessionStorage.getItem(this.storageKey);
+      if (!local && session) {
+        localStorage.setItem(this.storageKey, session);
+        sessionStorage.removeItem(this.storageKey);
+        console.log('🔁 [MOCK PERSISTENCE] Migrado de sessionStorage para localStorage');
+      }
+      const source = localStorage.getItem(this.storageKey);
+      return source ? JSON.parse(source) : this.getDefaultData();
     } catch (error) {
       console.warn('⚠️ [MOCK PERSISTENCE] Erro ao carregar dados:', error);
       return this.getDefaultData();
@@ -30,8 +39,8 @@ class MockPersistence {
 
   setData(data) {
     try {
-      sessionStorage.setItem(this.storageKey, JSON.stringify(data));
-      console.log('💾 [MOCK PERSISTENCE] Dados salvos:', Object.keys(data).map(key => `${key}: ${data[key].length}`));
+      localStorage.setItem(this.storageKey, JSON.stringify(data));
+      console.log('💾 [MOCK PERSISTENCE] Dados salvos:', Object.keys(data).map(key => `${key}: ${Array.isArray(data[key]) ? data[key].length : (typeof data[key] === 'object' ? Object.keys(data[key]).length : '-')}`));
     } catch (error) {
       console.error('❌ [MOCK PERSISTENCE] Erro ao salvar dados:', error);
     }
@@ -203,7 +212,11 @@ class MockPersistence {
           createdAt: { seconds: Math.floor(Date.now()/1000) - 7776000 },
           updatedAt: { seconds: Math.floor(Date.now()/1000) - 259200 },
         }
-      ]
+      ],
+      // Solicitações de alteração de perfil (aprovadas pelo admin)
+      profileChangeRequests: [],
+      // Definições de campos personalizados por instalador
+      installerFieldDefinitions: {}
     };
   }
 
@@ -280,8 +293,111 @@ class MockPersistence {
     return users.find(user => user.id === id || user.uid === id);
   }
 
+  // Atualizar usuário (merge)
+  updateUser(id, updates) {
+    const data = this.getData();
+    const idx = data.users.findIndex(u => u.id === id || u.uid === id);
+    if (idx === -1) throw new Error('User not found');
+    data.users[idx] = {
+      ...data.users[idx],
+      ...updates,
+      updatedAt: { seconds: Math.floor(Date.now()/1000) }
+    };
+    this.setData(data);
+    return data.users[idx];
+  }
+
+  // Definições de campos personalizados por instalador
+  getInstallerFieldDefinitions(installerId) {
+    const data = this.getData();
+    const defs = data.installerFieldDefinitions || {};
+    return defs[installerId] || [];
+  }
+
+  setInstallerFieldDefinitions(installerId, fields) {
+    const data = this.getData();
+    if (!data.installerFieldDefinitions) data.installerFieldDefinitions = {};
+    data.installerFieldDefinitions[installerId] = Array.isArray(fields) ? fields : [];
+    this.setData(data);
+    return data.installerFieldDefinitions[installerId];
+  }
+
+  // Solicitações de alteração de perfil
+  getProfileChangeRequests(status) {
+    const list = this.getData().profileChangeRequests || [];
+    if (!status) return list;
+    return list.filter(r => r.status === status);
+  }
+
+  addProfileChangeRequest(request) {
+    const data = this.getData();
+    const newReq = {
+      id: `pcr-${Date.now()}`,
+      status: 'pending',
+      createdAt: { seconds: Math.floor(Date.now()/1000) },
+      updatedAt: { seconds: Math.floor(Date.now()/1000) },
+      ...request,
+    };
+    data.profileChangeRequests.push(newReq);
+    this.setData(data);
+    return newReq;
+  }
+
+  updateProfileChangeRequest(id, updates) {
+    const data = this.getData();
+    const idx = data.profileChangeRequests.findIndex(r => r.id === id);
+    if (idx === -1) throw new Error('Request not found');
+    data.profileChangeRequests[idx] = {
+      ...data.profileChangeRequests[idx],
+      ...updates,
+      updatedAt: { seconds: Math.floor(Date.now()/1000) }
+    };
+    this.setData(data);
+    return data.profileChangeRequests[idx];
+  }
+
+  approveProfileChangeRequest(id) {
+    const data = this.getData();
+    const idx = data.profileChangeRequests.findIndex(r => r.id === id);
+    if (idx === -1) throw new Error('Request not found');
+    const req = data.profileChangeRequests[idx];
+    // aplicar atualizações no usuário
+    const userIdx = data.users.findIndex(u => u.id === req.userId || u.uid === req.userId);
+    if (userIdx !== -1) {
+      data.users[userIdx] = {
+        ...data.users[userIdx],
+        ...req.updates,
+        updatedAt: { seconds: Math.floor(Date.now()/1000) }
+      };
+    }
+    // marcar como aprovado
+    data.profileChangeRequests[idx] = {
+      ...req,
+      status: 'approved',
+      updatedAt: { seconds: Math.floor(Date.now()/1000) }
+    };
+    this.setData(data);
+    return data.profileChangeRequests[idx];
+  }
+
+  rejectProfileChangeRequest(id, reason = '') {
+    const data = this.getData();
+    const idx = data.profileChangeRequests.findIndex(r => r.id === id);
+    if (idx === -1) throw new Error('Request not found');
+    const req = data.profileChangeRequests[idx];
+    data.profileChangeRequests[idx] = {
+      ...req,
+      status: 'rejected',
+      rejectionReason: reason,
+      updatedAt: { seconds: Math.floor(Date.now()/1000) }
+    };
+    this.setData(data);
+    return data.profileChangeRequests[idx];
+  }
+
   // Método para limpar todos os dados (útil para testes)
   clearAll() {
+    localStorage.removeItem(this.storageKey);
     sessionStorage.removeItem(this.storageKey);
     console.log('🗑️ [MOCK PERSISTENCE] Todos os dados removidos');
   }

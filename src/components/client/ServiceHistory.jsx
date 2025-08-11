@@ -448,16 +448,13 @@ export default function ServiceHistory() {
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     Última atualização: {formatDate(request.updatedAt)}
                   </div>
-                  <button 
+                  <Link 
+                    to={`/service-details/${request.id}`}
                     className="btn-secondary text-sm flex items-center space-x-2"
-                    onClick={() => {
-                      // TODO: Implementar visualização detalhada
-                      console.log('Ver detalhes da solicitação:', request.id);
-                    }}
                   >
                     <Eye className="w-4 h-4" />
                     <span>Ver Detalhes</span>
-                  </button>
+                  </Link>
                 </div>
               </div>
             ))}

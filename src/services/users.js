@@ -3,6 +3,7 @@ import {
   updateDoc, 
   getDoc, 
   getDocs, 
+  addDoc,
   doc, 
   query, 
   where, 
@@ -12,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import mockPersistence from './mockPersistence';
 
 // Roles de usuário
 export const USER_ROLES = {
@@ -150,37 +152,24 @@ export const createUser = async (userData, password) => {
   }
 };
 
-// Obter um usuário pelo ID
+// Obter um usuário pelo ID (exportar para uso no Profile)
 export const getUserById = async (userId) => {
   if (isDevelopmentMode()) {
-    console.log('🔧 [DEV MODE] Buscando usuário mock por ID:', userId);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
     const mockUser = mockUsers.find(user => user.id === userId || user.uid === userId);
-    if (mockUser) {
-      return mockUser;
-    } else {
-      throw new Error('User not found');
-    }
+    if (mockUser) return mockUser;
+    // fallback: mockPersistence
+    const persisted = mockPersistence.getUserById(userId);
+    if (persisted) return persisted;
+    throw new Error('User not found');
   }
-
   try {
-    return await withTimeout(async () => {
-      const userDocRef = doc(db, 'users', userId);
-      const userDoc = await getDoc(userDocRef);
-      
-      if (userDoc.exists()) {
-        return {
-          id: userDoc.id,
-          ...userDoc.data()
-        };
-      } else {
-        throw new Error('User not found');
-      }
-    });
-  } catch (error) {
-    console.error('Error getting user:', error);
-    throw error;
+    const ref = doc(db, 'users', userId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error('User not found');
+    return { id: snap.id, ...(snap.data() || {}) };
+  } catch (e) {
+    console.error('[users] getUserById error:', e);
+    throw e;
   }
 };
 
@@ -189,6 +178,7 @@ export const updateUser = async (userId, userData) => {
   if (isDevelopmentMode()) {
     console.log('🔧 [DEV MODE] Atualizando usuário mock:', { userId, userData });
     await new Promise(resolve => setTimeout(resolve, 400));
+    mockPersistence.updateUser(userId, userData);
     return true;
   }
 
@@ -206,6 +196,116 @@ export const updateUser = async (userId, userData) => {
   } catch (error) {
     console.error('Error updating user:', error);
     throw error;
+  }
+};
+
+// Campos personalizados por instalador (definidos pelo admin)
+export const getInstallerCustomFields = async (installerId) => {
+  if (isDevelopmentMode()) {
+    return mockPersistence.getInstallerFieldDefinitions(installerId);
+  }
+  try {
+    const defsSnap = await getDocs(collection(db, 'users', installerId, 'profileFieldDefs'));
+    const defs = defsSnap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+    // Normalizar saída para [{ key, label }]
+    return defs.map(d => ({ key: d.key, label: d.label })).filter(f => f.key && f.label);
+  } catch (e) {
+    console.error('[users] getInstallerCustomFields error:', e);
+    return [];
+  }
+};
+
+export const setInstallerCustomFields = async (installerId, fields) => {
+  if (isDevelopmentMode()) {
+    return mockPersistence.setInstallerFieldDefinitions(installerId, fields);
+  }
+  try {
+    // Apagar definições atuais
+    const colRef = collection(db, 'users', installerId, 'profileFieldDefs');
+    const current = await getDocs(colRef);
+    await Promise.all(current.docs.map(d => deleteDoc(doc(db, 'users', installerId, 'profileFieldDefs', d.id))));
+    // Inserir novas
+    const sanitized = (Array.isArray(fields) ? fields : []).filter(f => f.key && f.label);
+    await Promise.all(sanitized.map(f => addDoc(colRef, { key: f.key, label: f.label, updatedAt: serverTimestamp() })));
+    return sanitized;
+  } catch (e) {
+    console.error('[users] setInstallerCustomFields error:', e);
+    return [];
+  }
+};
+
+// Solicitações de alteração de perfil
+export const createProfileChangeRequest = async ({ userId, updates }) => {
+  if (isDevelopmentMode()) {
+    return mockPersistence.addProfileChangeRequest({ userId, updates });
+  }
+  try {
+    const ref = await addDoc(collection(db, 'profileChangeRequests'), {
+      userId,
+      updates,
+      status: 'pending',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    return { id: ref.id };
+  } catch (e) {
+    console.error('[users] createProfileChangeRequest error:', e);
+    throw e;
+  }
+};
+
+export const listProfileChangeRequests = async (status) => {
+  if (isDevelopmentMode()) {
+    return mockPersistence.getProfileChangeRequests(status);
+  }
+  try {
+    const base = collection(db, 'profileChangeRequests');
+    let q = base;
+    if (status) {
+      q = query(base, where('status', '==', status));
+    }
+    const snap = await getDocs(q);
+    // Ordenar no cliente por createdAt desc (evita necessidade de índice composto)
+    const items = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+    return items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  } catch (e) {
+    console.error('[users] listProfileChangeRequests error:', e);
+    return [];
+  }
+};
+
+export const approveProfileChangeRequest = async (requestId) => {
+  if (isDevelopmentMode()) {
+    return mockPersistence.approveProfileChangeRequest(requestId);
+  }
+  try {
+    const reqRef = doc(db, 'profileChangeRequests', requestId);
+    const reqSnap = await getDoc(reqRef);
+    if (!reqSnap.exists()) throw new Error('Request not found');
+    const data = reqSnap.data();
+    // Aplicar no usuário
+    const userRef = doc(db, 'users', data.userId);
+    await updateDoc(userRef, { ...(data.updates || {}), updatedAt: serverTimestamp() });
+    // Marcar como aprovado
+    await updateDoc(reqRef, { status: 'approved', updatedAt: serverTimestamp() });
+    return { id: requestId, ...data, status: 'approved' };
+  } catch (e) {
+    console.error('[users] approveProfileChangeRequest error:', e);
+    throw e;
+  }
+};
+
+export const rejectProfileChangeRequest = async (requestId, reason) => {
+  if (isDevelopmentMode()) {
+    return mockPersistence.rejectProfileChangeRequest(requestId, reason);
+  }
+  try {
+    const reqRef = doc(db, 'profileChangeRequests', requestId);
+    await updateDoc(reqRef, { status: 'rejected', rejectionReason: reason || '', updatedAt: serverTimestamp() });
+    return { id: requestId, status: 'rejected' };
+  } catch (e) {
+    console.error('[users] rejectProfileChangeRequest error:', e);
+    throw e;
   }
 };
 

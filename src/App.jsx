@@ -35,6 +35,7 @@ import AdminServiceRequestDetails from './components/admin/AdminServiceRequestDe
 // Shared Pages
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -62,17 +63,15 @@ function App() {
                   <Route path="/request-service" element={<ServiceRequestForm />} />
                   <Route path="/service-history" element={<ServiceHistory />} />
                   <Route path="/confirm-service/:id" element={<h1>Confirmar Serviço</h1>} />
-                  <Route path="/profile" element={<h1>Perfil do Cliente</h1>} />
                 </Route>
 
                 {/* Installer routes */}
                 <Route element={<RoleRoute allowedRoles={['installer']} />}>
                   <Route path="/installer/dashboard" element={<InstallerDashboard />} />
                   <Route path="/my-services" element={<MyServices />} />
+                  <Route path="/installer/service-history" element={<MyServices />} />
                   <Route path="/start-service/:id" element={<h1>Iniciar Serviço</h1>} />
                   <Route path="/complete-service/:id" element={<h1>Concluir Serviço</h1>} />
-                  <Route path="/service-history" element={<h1>Histórico de Serviços</h1>} />
-                  <Route path="/profile" element={<h1>Perfil do Instalador</h1>} />
                 </Route>
 
                 {/* Admin routes */}
@@ -85,11 +84,15 @@ function App() {
                   <Route path="/products" element={<h1>Gerenciar Produtos</h1>} />
                   <Route path="/add-product" element={<h1>Adicionar Produto</h1>} />
                   <Route path="/reports" element={<h1>Relatórios</h1>} />
-                  <Route path="/profile" element={<h1>Perfil do Administrador</h1>} />
                 </Route>
 
-                {/* Shared route for details (admin + installer) */}
-                <Route element={<RoleRoute allowedRoles={['admin','installer']} />}>
+                {/* Shared profile route for all authenticated roles */}
+                <Route path="/profile" element={<RoleRoute allowedRoles={['client','installer','admin']} />}> 
+                  <Route index element={<Profile />} />
+                </Route>
+
+                {/* Shared route for details (admin + installer + client - leitura para cliente) */}
+                <Route element={<RoleRoute allowedRoles={['admin','installer','client']} />}>
                   <Route path="/service-details/:id" element={<AdminServiceRequestDetails />} />
                 </Route>
               </Route>

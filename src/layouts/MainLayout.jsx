@@ -30,7 +30,7 @@ const clientNavItems = [
 const installerNavItems = [
   { title: 'Dashboard', path: '/installer/dashboard', icon: Home },
   { title: 'Meus Serviços', path: '/my-services', icon: Package },
-  { title: 'Histórico', path: '/service-history', icon: History },
+  { title: 'Histórico', path: '/installer/service-history', icon: History },
   { title: 'Meu Perfil', path: '/profile', icon: User },
 ];
 

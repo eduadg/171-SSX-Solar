@@ -427,7 +427,7 @@ export default function ClientDashboard() {
               }
               
               return (
-              <div key={request.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <Link to={`/service-details/${request.id}`} key={request.id} className="block border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
@@ -455,14 +455,11 @@ export default function ClientDashboard() {
                       )}
                     </div>
                   </div>
-                  <Link 
-                    to={`/service-details/${request.id}`}
-                    className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium"
-                  >
+                   <span className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium">
                     Ver detalhes
-                  </Link>
+                  </span>
                 </div>
-              </div>
+              </Link>
               );
             })}
           </div>

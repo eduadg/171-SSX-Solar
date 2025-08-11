@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getAllInstallers, updateUser, deleteUserData } from '../../services/users';
-import { Loader2, Search, Pencil, Trash2, RefreshCcw, UserCog } from 'lucide-react';
+import { getAllInstallers, updateUser, deleteUserData, getInstallerCustomFields, setInstallerCustomFields, listProfileChangeRequests, approveProfileChangeRequest, rejectProfileChangeRequest } from '../../services/users';
+import { Loader2, Search, Pencil, Trash2, RefreshCcw, UserCog, Plus, Check, X } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
 
 export default function ManageInstallers() {
@@ -13,6 +13,8 @@ export default function ManageInstallers() {
   const [selected, setSelected] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [fieldDefs, setFieldDefs] = useState([]);
+  const [pendingProfileReqs, setPendingProfileReqs] = useState([]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -42,6 +44,14 @@ export default function ManageInstallers() {
 
   useEffect(() => {
     load();
+  }, []);
+
+  useEffect(() => {
+    async function loadPending() {
+      const reqs = await listProfileChangeRequests('pending');
+      setPendingProfileReqs(reqs);
+    }
+    loadPending();
   }, []);
 
   const doRefresh = async () => {
@@ -161,6 +171,93 @@ export default function ManageInstallers() {
         </div>
       )}
 
+      {/* Solicitações de alteração de perfil pendentes */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+            <UserCog className="w-5 h-5 mr-2 text-orange-500" />
+            Solicitações de alteração de perfil
+            {pendingProfileReqs.length > 0 && (
+              <span className="ml-2 px-2 py-1 text-xs bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 rounded-full">
+                {pendingProfileReqs.length}
+              </span>
+            )}
+          </h2>
+          <button onClick={async ()=> setPendingProfileReqs(await listProfileChangeRequests('pending'))} className="btn-secondary">
+            <RefreshCcw className="w-4 h-4 mr-1" /> Atualizar
+          </button>
+        </div>
+        {pendingProfileReqs.length === 0 ? (
+          <div className="text-center py-8">
+            <UserCog className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">Nenhuma solicitação pendente.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {pendingProfileReqs.map(req => {
+              // Buscar o nome do usuário na lista de instaladores
+              const user = installers.find(u => (u.id || u.uid) === req.userId);
+              const userName = user?.name || user?.email || req.userId;
+              
+              return (
+                <div key={req.id} className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-3">
+                        <UserCog className="w-4 h-4 text-orange-500" />
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {userName}
+                        </p>
+                        <span className="text-xs text-gray-500">ID: {req.userId}</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {Object.entries(req.updates).map(([key, value]) => (
+                          <div key={key} className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 capitalize">
+                              {key === 'name' ? 'Nome' : 
+                               key === 'cpf' ? 'CPF' : 
+                               key === 'phone' ? 'Telefone' : 
+                               key === 'photoURL' ? 'Foto' : key}
+                            </p>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {key === 'photoURL' ? 'Nova foto selecionada' : value || '-'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col gap-2">
+                      <button 
+                        className="btn-primary inline-flex items-center text-sm" 
+                        onClick={async()=>{
+                          await approveProfileChangeRequest(req.id); 
+                          setPendingProfileReqs(await listProfileChangeRequests('pending'));
+                          // Recarregar lista de instaladores para mostrar as mudanças
+                          load();
+                        }}
+                      >
+                        <Check className="w-4 h-4 mr-1"/> Aprovar
+                      </button>
+                      <button 
+                        className="btn-ghost inline-flex items-center text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" 
+                        onClick={async()=>{
+                          await rejectProfileChangeRequest(req.id, 'Reprovado pelo admin'); 
+                          setPendingProfileReqs(await listProfileChangeRequests('pending'));
+                        }}
+                      >
+                        <X className="w-4 h-4 mr-1"/> Rejeitar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <Dialog open={!!selected} onClose={() => setSelected(null)} className="relative z-50">
         <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -190,6 +287,41 @@ export default function ManageInstallers() {
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Experiência</label>
                 <input className="input-field w-full" value={selected?.experience || ''} onChange={(e) => setSelected({ ...selected, experience: e.target.value })} />
+              </div>
+              {/* Campos personalizados definidos pelo admin para este instalador */}
+              <div className="md:col-span-2 mt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm text-gray-400">Campos personalizados</label>
+                  <button className="btn-ghost inline-flex items-center" onClick={async()=>{
+                    const defs = await getInstallerCustomFields(selected?.id || selected?.uid);
+                    setFieldDefs(defs);
+                  }}>
+                    <RefreshCcw className="w-4 h-4 mr-1"/> Recarregar
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {fieldDefs.map((f, idx) => (
+                    <div key={f.key} className="flex gap-2">
+                      <input className="input-field flex-1" value={f.label} onChange={(e)=>{
+                        const copy = [...fieldDefs];
+                        copy[idx] = { ...copy[idx], label: e.target.value };
+                        setFieldDefs(copy);
+                      }} />
+                      <input className="input-field w-40" value={f.key} onChange={(e)=>{
+                        const copy = [...fieldDefs];
+                        copy[idx] = { ...copy[idx], key: e.target.value };
+                        setFieldDefs(copy);
+                      }} />
+                    </div>
+                  ))}
+                  <button className="btn-secondary inline-flex items-center" onClick={()=> setFieldDefs([...fieldDefs, { key: '', label: '' }])}>
+                    <Plus className="w-4 h-4 mr-1"/> Adicionar Campo
+                  </button>
+                  <button className="btn-primary ml-2" onClick={async()=>{
+                    await setInstallerCustomFields(selected?.id || selected?.uid, fieldDefs.filter(f=>f.key && f.label));
+                    alert('Campos salvos');
+                  }}>Salvar Campos</button>
+                </div>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">

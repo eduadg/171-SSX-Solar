@@ -135,7 +135,7 @@ export default function AdminServiceRequestDetails() {
     <div className="min-h-screen flex flex-col items-center bg-transparent px-4 py-8">
       <div className="w-full max-w-2xl mt-10">
         <div className="flex items-center mb-6">
-          <Link to="/service-requests" className="btn-secondary inline-flex items-center mr-4 shadow-md hover:shadow-lg transition">
+           <Link to={userRole === 'client' ? '/service-history' : '/service-requests'} className="btn-secondary inline-flex items-center mr-4 shadow-md hover:shadow-lg transition">
             <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
           </Link>
           <h1 className="text-3xl font-bold text-gray-100 flex-1">Detalhes da Solicitação</h1>
