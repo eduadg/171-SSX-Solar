@@ -541,3 +541,95 @@ export const uploadInstallationImage = async (requestId, file) => {
     throw error;
   }
 }; 
+
+// ====== NOVO: Controle de tempo e logs ======
+export const addTimeLog = async (requestId, logEntry) => {
+  if (isDevelopmentMode()) {
+    const updated = mockPersistence.updateServiceRequest(requestId, {
+      timeLogs: [
+        ...((mockPersistence.getServiceRequestById(requestId)?.timeLogs) || []),
+        { ...logEntry, timestamp: { seconds: Math.floor(Date.now()/1000) } }
+      ]
+    });
+    return updated;
+  }
+  const ref = doc(db, 'serviceRequests', requestId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error('Service not found');
+  const data = snap.data();
+  const timeLogs = data.timeLogs || [];
+  await updateDoc(ref, {
+    timeLogs: [...timeLogs, { ...logEntry, timestamp: serverTimestamp() }],
+    updatedAt: serverTimestamp()
+  });
+  return true;
+};
+
+export const pauseServiceRequest = async (requestId) => {
+  await addTimeLog(requestId, { type: 'pause' });
+  if (isDevelopmentMode()) return true;
+  const ref = doc(db, 'serviceRequests', requestId);
+  await updateDoc(ref, { status: SERVICE_STATUS.IN_PROGRESS, updatedAt: serverTimestamp() });
+  return true;
+};
+
+export const resumeServiceRequest = async (requestId) => {
+  await addTimeLog(requestId, { type: 'resume' });
+  if (isDevelopmentMode()) return true;
+  const ref = doc(db, 'serviceRequests', requestId);
+  await updateDoc(ref, { status: SERVICE_STATUS.IN_PROGRESS, updatedAt: serverTimestamp() });
+  return true;
+};
+
+export const startTravelLog = async (requestId, from = '') => {
+  return addTimeLog(requestId, { type: 'travel_start', from });
+};
+
+export const endTravelLog = async (requestId, to = '') => {
+  return addTimeLog(requestId, { type: 'travel_end', to });
+};
+
+// ====== NOVO: Checklist por serviço ======
+export const getChecklistTemplate = (equipmentType) => {
+  // Templates simples; podem evoluir por produto/serviço
+  const base = [
+    { key: 'photos_before', label: 'Fotos do local (antes)', required: true, type: 'photo' },
+    { key: 'safety_ok', label: 'Conferência de segurança', required: true, type: 'boolean' },
+    { key: 'install_done', label: 'Instalação concluída', required: true, type: 'boolean' },
+    { key: 'photos_after', label: 'Fotos do local (depois)', required: true, type: 'photo' },
+    { key: 'notes', label: 'Observações técnicas', required: false, type: 'text' }
+  ];
+  if (equipmentType === 'solar_heater') {
+    return [
+      { key: 'panel_fixation', label: 'Fixação dos painéis', required: true, type: 'boolean' },
+      { key: 'hydraulic_connections', label: 'Conexões hidráulicas revisadas', required: true, type: 'boolean' },
+      ...base
+    ];
+  }
+  return [
+    { key: 'gas_leak_test', label: 'Teste de vazamento de gás', required: true, type: 'boolean' },
+    { key: 'ventilation_ok', label: 'Ventilação adequada', required: true, type: 'boolean' },
+    ...base
+  ];
+};
+
+export const getServiceChecklist = async (requestId) => {
+  if (isDevelopmentMode()) {
+    const req = mockPersistence.getServiceRequestById(requestId);
+    return req?.checklist || null;
+  }
+  const ref = doc(db, 'serviceRequests', requestId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error('Service not found');
+  return snap.data().checklist || null;
+};
+
+export const saveServiceChecklist = async (requestId, checklist) => {
+  if (isDevelopmentMode()) {
+    mockPersistence.updateServiceRequest(requestId, { checklist, updatedAt: { seconds: Math.floor(Date.now()/1000) } });
+    return true;
+  }
+  const ref = doc(db, 'serviceRequests', requestId);
+  await updateDoc(ref, { checklist, updatedAt: serverTimestamp() });
+  return true;
+};

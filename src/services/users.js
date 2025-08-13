@@ -234,6 +234,48 @@ export const setInstallerCustomFields = async (installerId, fields) => {
   }
 };
 
+// Disponibilidade do instalador (agenda/capacidade)
+export const getInstallerAvailability = async (installerId) => {
+  if (isDevelopmentMode()) {
+    return [];
+  }
+  try {
+    const col = collection(db, 'users', installerId, 'availability');
+    const snap = await getDocs(col);
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+  } catch (e) {
+    console.error('[users] getInstallerAvailability error:', e);
+    return [];
+  }
+};
+
+export const addAvailabilityBlock = async (installerId, block) => {
+  if (isDevelopmentMode()) {
+    return { id: `mock-${Date.now()}`, ...block };
+  }
+  try {
+    const col = collection(db, 'users', installerId, 'availability');
+    const ref = await addDoc(col, { ...block, updatedAt: serverTimestamp(), createdAt: serverTimestamp() });
+    return { id: ref.id, ...block };
+  } catch (e) {
+    console.error('[users] addAvailabilityBlock error:', e);
+    throw e;
+  }
+};
+
+export const deleteAvailabilityBlock = async (installerId, blockId) => {
+  if (isDevelopmentMode()) {
+    return true;
+  }
+  try {
+    await deleteDoc(doc(db, 'users', installerId, 'availability', blockId));
+    return true;
+  } catch (e) {
+    console.error('[users] deleteAvailabilityBlock error:', e);
+    throw e;
+  }
+};
+
 // Solicitações de alteração de perfil
 export const createProfileChangeRequest = async ({ userId, updates }) => {
   if (isDevelopmentMode()) {

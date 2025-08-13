@@ -15,7 +15,8 @@ import {
   ChevronDown,
   Zap,
   Bell,
-  Settings
+  Settings,
+  Calendar
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 
@@ -31,6 +32,8 @@ const installerNavItems = [
   { title: 'Dashboard', path: '/installer/dashboard', icon: Home },
   { title: 'Meus Serviços', path: '/my-services', icon: Package },
   { title: 'Histórico', path: '/installer/service-history', icon: History },
+  { title: 'Agenda', path: '/installer/agenda', icon: Calendar },
+  { title: 'Rotas', path: '/installer/route-planner', icon: Zap },
   { title: 'Meu Perfil', path: '/profile', icon: User },
 ];
 

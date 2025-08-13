@@ -24,6 +24,10 @@ import ServiceHistory from './components/client/ServiceHistory';
 // Installer Components
 import InstallerDashboard from './components/installer/Dashboard';
 import MyServices from './components/installer/MyServices';
+import Agenda from './components/installer/Agenda';
+import Checklist from './components/installer/Checklist';
+import TimeTracker from './components/installer/TimeTracker';
+import RoutePlanner from './components/installer/RoutePlanner';
 
 // Admin Components
 import AdminDashboard from './components/admin/Dashboard';
@@ -70,6 +74,10 @@ function App() {
                   <Route path="/installer/dashboard" element={<InstallerDashboard />} />
                   <Route path="/my-services" element={<MyServices />} />
                   <Route path="/installer/service-history" element={<MyServices />} />
+                  <Route path="/installer/agenda" element={<Agenda />} />
+                  <Route path="/installer/checklist/:id" element={<Checklist />} />
+                  <Route path="/installer/time/:id" element={<TimeTracker />} />
+                  <Route path="/installer/route-planner" element={<RoutePlanner />} />
                   <Route path="/start-service/:id" element={<h1>Iniciar Serviço</h1>} />
                   <Route path="/complete-service/:id" element={<h1>Concluir Serviço</h1>} />
                 </Route>
