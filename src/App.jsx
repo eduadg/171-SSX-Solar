@@ -34,6 +34,10 @@ import AdminDashboard from './components/admin/Dashboard';
 import AdminServiceRequests from './components/admin/AdminServiceRequests';
 import ManageInstallers from './components/admin/ManageInstallers';
 import ManageClients from './components/admin/ManageClients';
+import ApprovalsCenter from './components/admin/ApprovalsCenter';
+import Inventory from './components/admin/Inventory';
+import Pricing from './components/admin/Pricing';
+import ServiceTemplates from './components/admin/ServiceTemplates';
 import AdminServiceRequestDetails from './components/admin/AdminServiceRequestDetails';
 
 // Shared Pages
@@ -87,6 +91,10 @@ function App() {
                   <Route path="/admin/dashboard" element={<AdminDashboard />} />
                   <Route path="/service-requests" element={<AdminServiceRequests />} />
                   <Route path="/installers" element={<ManageInstallers />} />
+                  <Route path="/approvals" element={<ApprovalsCenter />} />
+                  <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/service-templates" element={<ServiceTemplates />} />
                   <Route path="/add-installer" element={<h1>Adicionar Instalador</h1>} />
                   <Route path="/clients" element={<ManageClients />} />
                   <Route path="/products" element={<h1>Gerenciar Produtos</h1>} />

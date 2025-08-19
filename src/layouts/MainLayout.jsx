@@ -16,7 +16,11 @@ import {
   Zap,
   Bell,
   Settings,
-  Calendar
+  Calendar,
+  FileText,
+  BarChart3,
+  ClipboardCheck,
+  DollarSign
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 
@@ -41,9 +45,12 @@ const adminNavItems = [
   { title: 'Dashboard', path: '/admin/dashboard', icon: Home },
   { title: 'Solicitações', path: '/service-requests', icon: Package },
   { title: 'Instaladores', path: '/installers', icon: Users },
+  { title: 'Central de Aprovações', path: '/approvals', icon: ClipboardCheck },
+  { title: 'Estoque e Insumos', path: '/inventory', icon: Package },
+  { title: 'Tabelas de Preços', path: '/pricing', icon: DollarSign },
+  { title: 'Templates de Serviços', path: '/service-templates', icon: FileText },
   { title: 'Clientes', path: '/clients', icon: Users },
   { title: 'Produtos', path: '/products', icon: Package },
-  { title: 'Administração', path: '/admin', icon: Shield },
   { title: 'Meu Perfil', path: '/profile', icon: User },
 ];
 

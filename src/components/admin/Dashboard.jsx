@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import KPIs from './KPIs';
 import { Link } from 'react-router-dom';
 import { getAllServiceRequests } from '../../services/serviceRequests';
 import { getAllInstallers } from '../../services/users';
@@ -147,6 +148,9 @@ export default function AdminDashboard() {
           Visão geral da empresa SSX Solar. Gerencie solicitações, instaladores e produtos.
         </p>
       </div>
+
+      {/* KPIs Globais */}
+      <KPIs />
       
       {/* Estatísticas de Solicitações */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
