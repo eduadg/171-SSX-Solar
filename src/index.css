@@ -15,11 +15,11 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm hover:shadow-md;
   }
   
   .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 shadow-sm hover:shadow-md;
   }
   
   .btn-ghost {
@@ -27,7 +27,7 @@
   }
   
   .card {
-    @apply bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-100 dark:border-gray-700;
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700;
   }
   
   .glass-card {
@@ -35,7 +35,7 @@
   }
   
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200;
+    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200;
   }
   
   .sidebar-item {
@@ -70,6 +70,41 @@
   background-size: 400% 400%;
   animation: gradient 15s ease infinite;
 }
+
+.animate-fade-up {
+  animation: fadeUp 0.8s ease-out both;
+}
+
+@keyframes fadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-tilt {
+  transform: perspective(1000px) rotateX(0) rotateY(0);
+  transition: transform 450ms;
+}
+.animate-tilt:hover {
+  transform: perspective(1000px) rotateX(3deg) rotateY(-3deg) translateY(-2px);
+}
+
+/* Scroll reveal utilities */
+.reveal { opacity: 0; transform: translateY(24px); transition: all 800ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.reveal.in-view { opacity: 1; transform: none; }
+.reveal-left { opacity: 0; transform: translateX(-24px); transition: all 900ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.reveal-left.in-view { opacity: 1; transform: none; }
+.reveal-right { opacity: 0; transform: translateX(24px); transition: all 900ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.reveal-right.in-view { opacity: 1; transform: none; }
+.reveal-scale { opacity: 0; transform: scale(0.95); transition: all 900ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.reveal-scale.in-view { opacity: 1; transform: scale(1); }
+
+.parallax { will-change: transform; }
 
 @keyframes gradient {
   0% {

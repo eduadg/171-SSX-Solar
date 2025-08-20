@@ -43,6 +43,7 @@ import AdminServiceRequestDetails from './components/admin/AdminServiceRequestDe
 // Shared Pages
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
+import Landing from './pages/Landing';
 import Profile from './pages/Profile';
 
 function App() {
@@ -55,6 +56,7 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Landing />} />
             
             {/* Dashboard router - redirecionamento inteligente */}
             <Route path="/dashboard" element={<DashboardRouter />} />
@@ -116,7 +118,6 @@ function App() {
 
             {/* Special routes */}
             <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>
